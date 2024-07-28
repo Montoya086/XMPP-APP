@@ -5,9 +5,9 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/RootParamList";
-import { AppNavigationState, useAppSelector } from "store";
+import { AppNavigationState, useAppSelector } from "@store/";
 import { AppLoader } from "@components/";
-import AuthGroup from "src/modules/Auth/navigations/AuthGroup";
+import AuthGroup from "../../modules/Auth/navigations/AuthGroup";
 // import InformationGroup from '../../modules/Information/navigations/InformationGroup'
 
 interface RootStackScreenProps {
