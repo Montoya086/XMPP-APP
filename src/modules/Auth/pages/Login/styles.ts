@@ -1,0 +1,19 @@
+import styled from '@emotion/native'
+
+export const FormContainer = styled.View(({ theme }) => ({
+    gap: theme.sizes.md,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+}))
+
+export const SignUpText = styled.Text(({ theme }) => ({
+    color: theme.colors.primary,
+    fontSize: theme.sizes.sm,
+    fontWeight: 'bold',
+}))
+
+export const SignUpTextNormal = styled.Text(({ theme }) => ({
+    color: theme.colors.foreground3,
+    fontSize: theme.sizes.sm,
+}))
