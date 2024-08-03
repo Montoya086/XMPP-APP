@@ -12,13 +12,6 @@ const { assetExts, sourceExts } = defaultConfig.resolver;
 
 const config = {
   resolver: {
-    extraNodeModules: {
-      ...defaultConfig.resolver.extraNodeModules,
-      crypto: require.resolve('crypto-browserify'),
-      stream: require.resolve('stream-browserify'),
-      buffer: require.resolve('buffer/'),
-      events: require.resolve('events/'),
-    },
     assetExts: assetExts.filter((ext) => ext !== 'svg'),
     sourceExts: [...sourceExts, 'js', 'json', 'ts', 'tsx', 'jsx', 'svg'],
   },

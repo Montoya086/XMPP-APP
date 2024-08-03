@@ -1,7 +1,5 @@
 import { AppBackground, CustomTextInput, Button } from "@components/";
 import React, { FC } from "react";
-import { Text, View } from "react-native";
-import { TextInput } from 'react-native-paper';
 import { FormContainer, SignUpText, SignUpTextNormal } from "./styles";
 import Logo from "../../../../assets/icons/logo.svg";
 
