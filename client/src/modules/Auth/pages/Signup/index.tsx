@@ -3,13 +3,13 @@ import React, { FC, useEffect } from "react";
 import { FormContainer, SignUpText, SignUpTextNormal } from "./styles";
 import Logo from "../../../../assets/icons/logo.svg";
 import Chevron from "../../../../assets/icons/chevron.svg";
-import { useLogin } from "./useLogin";
+import { useSignUp } from "./useSignUp";
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 
-const LoginScreen: FC<RootStackScreenProps<"Login">> = ({
+const SignUpScreen: FC<RootStackScreenProps<"Signup">> = ({
     navigation,
 }) => {
-    const { loginValues } = useLogin();
+    const { signUpValues } = useSignUp();
 
     return (
         <AppBackground isSafe>
@@ -21,21 +21,31 @@ const LoginScreen: FC<RootStackScreenProps<"Login">> = ({
                 <CustomTextInput
                     textInputProps={{
                         placeholder: "myuser123",
-                        value: loginValues.values.jid,
-                        onChangeText: loginValues.handleChange("jid"),
+                        value: signUpValues.values.jid,
+                        onChangeText: signUpValues.handleChange("jid"),
                     }}
                     label="JID"
-                    error={loginValues.errors.jid?.toString()}
+                    error={signUpValues.errors.jid?.toString()}
                 />
                 <CustomTextInput
                     textInputProps={{
                         placeholder: "mysecretpassword",
-                        value: loginValues.values.password,
-                        onChangeText: loginValues.handleChange("password"),
+                        value: signUpValues.values.password,
+                        onChangeText: signUpValues.handleChange("password"),
                         secureTextEntry: true,
                     }}
                     label="Password"
-                    error={loginValues.errors.password?.toString()}
+                    error={signUpValues.errors.password?.toString()}
+                />
+                <CustomTextInput
+                    textInputProps={{
+                        placeholder: "mymail@mail.com",
+                        value: signUpValues.values.email,
+                        onChangeText: signUpValues.handleChange("email"),
+                        secureTextEntry: true,
+                    }}
+                    label="Email"
+                    error={signUpValues.errors.email?.toString()}
                 />
                 <DropDownMenu
                     items={[
@@ -45,30 +55,30 @@ const LoginScreen: FC<RootStackScreenProps<"Login">> = ({
                         },
                     ]}
                     onSelect={(item)=>{
-                        loginValues.setFieldValue("serverUrl", item.value);
-                        loginValues.setFieldValue("serverName", item.label);
+                        signUpValues.setFieldValue("serverUrl", item.value);
+                        signUpValues.setFieldValue("serverName", item.label);
                     }}
                     selected={{
-                        label: loginValues.values.serverName,
-                        value: loginValues.values.serverUrl,
+                        label: signUpValues.values.serverName,
+                        value: signUpValues.values.serverUrl,
                     }}
                     label="Server"
                     variant="outlined"
                     chevron={<Chevron />}
-                    error={loginValues.errors.serverName?.toString()}
+                    error={signUpValues.errors.serverName?.toString()}
                 />
                 <Button
                     text="Login"
-                    onPress={loginValues.handleSubmit}
+                    onPress={signUpValues.handleSubmit}
                 />
                 <SignUpTextNormal>
-                    {"Don't have an account? "}
+                    {"Already have an account? "}
                     <SignUpText
                         onPress={() => {
-                            navigation.navigate("Signup");
+                            navigation.navigate("Login");
                         }}
                     >
-                        Sign Up
+                        Login
                     </SignUpText>
                 </SignUpTextNormal>
             </FormContainer> 
@@ -76,4 +86,4 @@ const LoginScreen: FC<RootStackScreenProps<"Login">> = ({
     )
 }
 
-export default LoginScreen;
+export default SignUpScreen;
