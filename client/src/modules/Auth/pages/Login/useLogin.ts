@@ -1,5 +1,6 @@
 import * as yup from 'yup';
 import { useFormik } from 'formik';
+import xmppService from '../../../../utils/xmpp';
 
 export const useLogin = () => {
     const validationSchema = yup.object().shape({
@@ -18,7 +19,14 @@ export const useLogin = () => {
         },
         validationSchema,
         onSubmit: values => {
-            console.log(values);
+            const credentials = {
+                service: values.serverUrl,
+                domain: values.serverName,
+                resource: '',
+                username: values.jid,
+                password: values.password,
+              };
+              xmppService.connect(credentials);
         },
     });
     
