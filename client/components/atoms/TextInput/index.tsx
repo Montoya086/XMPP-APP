@@ -1,17 +1,19 @@
 import { FC } from "react";
 import { TextInput, TextInputProps, View, ViewProps } from "react-native";
-import { Container, LabelText, Wrapper } from "./styles";
+import { Container, ErrorText, LabelText, Wrapper } from "./styles";
 
 interface CustomTextInputProps {
     textInputProps?: TextInputProps;
     containerProps?: ViewProps;
     label?: string;
+    error?: string;
 }
 
 export const CustomTextInput: FC<CustomTextInputProps> = ({
     textInputProps,
     containerProps,
-    label
+    label,
+    error
 }) => {
     return(
         <Wrapper>
@@ -23,6 +25,7 @@ export const CustomTextInput: FC<CustomTextInputProps> = ({
                     {...textInputProps}
                 />
             </Container>
+            {error && <ErrorText>{error}</ErrorText>}
         </Wrapper>
     )
 };

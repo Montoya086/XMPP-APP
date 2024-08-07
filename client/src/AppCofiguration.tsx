@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import AppNavigator from './navigations/AppNavigator'
+import { useAppSelector } from '@store/'
 
 
 

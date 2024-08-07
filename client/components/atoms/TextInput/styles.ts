@@ -17,3 +17,8 @@ export const LabelText = styled.Text(({ theme }) => ({
     fontWeight: 'bold',
     fontSize: theme.sizes.sm,
 }))
+
+export const ErrorText = styled.Text(({ theme }) => ({
+    color: theme.colors.error,
+    fontSize: theme.sizes.xs,
+}))

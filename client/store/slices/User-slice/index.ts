@@ -2,13 +2,13 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
 export interface User {
-  userId: string;
-  name: string;
+  jid: string;
+  hostUrl: string;
 }
 
 const initialState: User = {
-  userId: "",
-  name: "",
+  jid: "",
+  hostUrl: "",
 };
 
 export const userSlice = createSlice({
@@ -17,12 +17,12 @@ export const userSlice = createSlice({
   reducers: {
     setUser(state, action: PayloadAction<User>) {
       console.debug("changeUser", action.payload);
-      state.userId = action.payload.userId;
-      state.name = action.payload.name;
+      state.jid = action.payload.jid;
+      state.hostUrl = action.payload.hostUrl;
     },
     removeUser(state) {
-      state.userId = "";
-      state.name = "";
+      state.jid = "";
+      state.hostUrl = "";
     },
   },
 });

@@ -1,10 +1,13 @@
-import { AppBackground, CustomTextInput, Button } from "@components/";
-import React, { FC } from "react";
+import { AppBackground, CustomTextInput, Button, DropDownMenu } from "@components/";
+import React, { FC, useEffect } from "react";
 import { FormContainer, SignUpText, SignUpTextNormal } from "./styles";
 import Logo from "../../../../assets/icons/logo.svg";
+import Chevron from "../../../../assets/icons/chevron.svg";
+import { useLogin } from "./useLogin";
 
 const LoginScreen: FC = () => {
-    const [text, setText] = React.useState("");
+    const { loginValues } = useLogin();
+
     return (
         <AppBackground isSafe>
             <FormContainer>
@@ -14,23 +17,46 @@ const LoginScreen: FC = () => {
                 />
                 <CustomTextInput
                     textInputProps={{
-                        placeholder: "mail@alumchat.lol",
-                        value: text,
-                        onChangeText: text => setText(text),
+                        placeholder: "miuser123",
+                        value: loginValues.values.jid,
+                        onChangeText: loginValues.handleChange("jid"),
                     }}
-                    label="Email"
+                    label="JID"
+                    error={loginValues.errors.jid?.toString()}
                 />
                 <CustomTextInput
                     textInputProps={{
                         placeholder: "mysecretpassword",
-                        value: text,
-                        onChangeText: text => setText(text),
+                        value: loginValues.values.password,
+                        onChangeText: loginValues.handleChange("password"),
+                        secureTextEntry: true,
                     }}
                     label="Password"
+                    error={loginValues.errors.password?.toString()}
+                />
+                <DropDownMenu
+                    items={[
+                        {
+                            label: "alumchat.lol",
+                            value: "ws://alumchat.lol:7070/ws/",
+                        },
+                    ]}
+                    onSelect={(item)=>{
+                        loginValues.setFieldValue("serverUrl", item.value);
+                        loginValues.setFieldValue("serverName", item.label);
+                    }}
+                    selected={{
+                        label: loginValues.values.serverName,
+                        value: loginValues.values.serverUrl,
+                    }}
+                    label="Server"
+                    variant="outlined"
+                    chevron={<Chevron />}
+                    error={loginValues.errors.serverName?.toString()}
                 />
                 <Button
                     text="Login"
-                    onPress={() => {}}
+                    onPress={loginValues.handleSubmit}
                 />
                 <SignUpTextNormal>
                     {"Don't have an account? "}
