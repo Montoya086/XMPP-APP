@@ -8,6 +8,7 @@ import { RootStackParamList } from "../types/RootParamList";
 import { AppNavigationState, useAppSelector } from "@store/";
 import { AppLoader } from "@components/";
 import AuthGroup from "../../modules/Auth/navigations/AuthGroup";
+import ChatGroup from "../../modules/Chat/navigations/ChatGroup";
 // import InformationGroup from '../../modules/Information/navigations/InformationGroup'
 
 interface RootStackScreenProps {
@@ -21,7 +22,7 @@ const RootStackScreen: React.FC<RootStackScreenProps> = ({ appState }) => {
   const screenForAppState = useCallback((appStateValue: AppNavigationState) => {
     switch (appStateValue) {
       case "LOGGED_IN":
-        return [AuthGroup()];
+        return [ChatGroup()];
       case "NOT_LOGGED_IN":
         return [AuthGroup()];
       default:

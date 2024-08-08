@@ -12,7 +12,6 @@ export const SafeContainer = styled.SafeAreaView(({ theme }) => ({
 
 export const ScreenWrapper = styled.View(({ theme }) => ({
   flex: 1,
-  padding: theme.sizes.sm,
   justifyContent: 'center',
   alignItems: 'center',
 }))

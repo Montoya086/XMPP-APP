@@ -17,3 +17,11 @@ export const SignUpTextNormal = styled.Text(({ theme }) => ({
     color: theme.colors.foreground3,
     fontSize: theme.sizes.sm,
 }))
+
+export const Container = styled.View(({ theme }) => ({
+    padding: theme.sizes.sm,
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+}))

@@ -5,6 +5,7 @@ export type BottomTabsParamList = {
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
+  Chat: undefined;
 };
 
 declare global {
