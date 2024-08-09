@@ -20,6 +20,7 @@ export const ChatContainer = styled.View(({ theme }) => ({
 export const ChatWrapper = styled.View(({ theme }) => ({
     flex: 1,
     width: '100%',
+    paddingVertical: theme.sizes.sm,
 }))
 
 export const InputContainer = styled.View(({ theme }) => ({
@@ -39,4 +40,16 @@ export const SendButton = styled.TouchableOpacity(({ theme }) => ({
 
 export const InputWrapper = styled.View(({ theme }) => ({
     flex: 1,
+}))
+
+export const ChatBubble = styled.View<{
+    isSender: boolean
+}>(({ theme, isSender }) => ({
+    backgroundColor: isSender ? theme.colors.quinary : theme.colors.primary,
+    padding: theme.sizes.sm,
+    borderRadius: theme.sizes.xs,
+    maxWidth: '70%',
+    minWidth: '30%',
+    alignSelf: isSender ? 'flex-end' : 'flex-start',
+    marginBottom: theme.sizes.xs,
 }))

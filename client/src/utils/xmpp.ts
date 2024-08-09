@@ -33,6 +33,7 @@ class XMPPService {
       });
 
       this.xmpp.on('stanza', (stanza: any) => {
+        console.log('📩', stanza.toString());
         if (stanza.is('message') && stanza.getChild('body')) {
           const from = stanza.attrs.from;
           const body = stanza.getChild('body').text();
@@ -82,70 +83,16 @@ class XMPPService {
     }
   }
 
-  async getMembers(server: string): Promise<string[]> {
+  // Listen for the client to connect
+  listenForConnection(callback: () => void): void {
     if (this.xmpp) {
-      return new Promise((resolve, reject) => {
-        const members: string[] = [];
-        this.xmpp!.on('stanza', (stanza: any) => {
-          if (stanza.is('iq') && stanza.attrs.type === 'result') {
-            stanza.getChild('query').children.forEach((item: any) => {
-              if (item.name === 'item') {
-                members.push(item.attrs.jid);
-              }
-            });
-            resolve(members);
-          }
-        });
-        const iq = xml(
-          'iq',
-          { type: 'get', to: server },
-          xml('query', { xmlns: 'http://jabber.org/protocol/disco#items' })
-        );
-        this.xmpp!.send(iq).catch(reject);
+      this.xmpp.on('online', async () => {
+        callback();
       });
     } else {
       console.error('XMPP client is not connected');
-      return [];
-    }
   }
 
-  async registerUser(config: XMPPConfig): Promise<void> {
-    const { service, domain, username, password } = config;
-    if (!this.xmpp) {
-      this.xmpp = client({ service });
-
-      this.xmpp.on('error', (err: Error) => {
-        console.error('❌', err.toString());
-      });
-
-      this.xmpp.on('status', (status: string) => {
-        console.log('🛈', status);
-      });
-
-      this.xmpp.on('online', async () => {
-        const iq = xml(
-          'iq',
-          { type: 'set', to: domain },
-          xml('query', { xmlns: 'jabber:iq:register' },
-            xml('username', {}, username),
-            xml('password', {}, password)
-          )
-        );
-
-        try {
-          await this.xmpp!.send(iq);
-          console.log('✅', 'User registered successfully');
-        } catch (err) {
-          console.error('❌', 'Failed to register user', err);
-        } finally {
-          this.disconnect();
-        }
-      });
-
-      this.xmpp.start().catch(console.error);
-    } else {
-      console.error('XMPP client is already connected');
-    }
   }
 }
 
