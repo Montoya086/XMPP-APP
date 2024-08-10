@@ -2,7 +2,7 @@ import * as yup from 'yup';
 import { useFormik } from 'formik';
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from 'react-redux';
-import { changeAppState, setLoading, setUser } from '@store/';
+import { changeAppState, registerUser, setLoading, setUser } from '@store/';
 
 export const useLogin = () => {
     const validationSchema = yup.object().shape({
@@ -47,6 +47,7 @@ export const useLogin = () => {
                     password: values.password
                 }));
                 dispatch(changeAppState({appNavigationState: 'LOGGED_IN'}));
+                dispatch(registerUser(values.jid));
             }
             dispatch(setLoading(false));
         },

@@ -3,7 +3,7 @@ import { useFormik } from 'formik';
 import xmppService from '../../../../utils/xmpp';
 import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
-import { changeAppState, setUser } from '@store/';
+import { changeAppState, registerUser, setUser } from '@store/';
 
 export const useSignUp = () => {
 
@@ -47,6 +47,7 @@ export const useSignUp = () => {
                     password: values.password
                 }));
                 dispatch(changeAppState({appNavigationState: 'LOGGED_IN'}));
+                dispatch(registerUser(values.jid));
             } else {
                 Toast.show({
                     type: "error",

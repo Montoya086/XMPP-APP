@@ -139,6 +139,32 @@ class XMPPService {
     }
   }
 
+  async getContacts(): Promise<{
+    contacts: { jid: string; name: string; subscription: string }[];
+  }> {
+    if (this.xmpp) {
+      const iq = xml('iq', { type: 'get', id: 'roster1' },
+        xml('query', { xmlns: 'jabber:iq:roster' })
+      );
+
+      const stanza = await this.xmpp.sendReceive(iq);
+      const query = stanza.getChild('query', 'jabber:iq:roster');
+      if (query) {
+        const items = query.getChildren('item');
+        const contacts = items.map(item => ({
+          jid: item.attrs.jid,
+          name: item.attrs.name || '',
+          subscription: item.attrs.subscription,
+        }));
+        return { contacts };
+      }
+      return { contacts: [] };
+    } else {
+      return { contacts: [] };
+      console.error('XMPP client is not connected');
+    }
+  }
+
 }
 
 export default new XMPPService();

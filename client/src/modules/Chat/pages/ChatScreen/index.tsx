@@ -1,18 +1,23 @@
 import { AppBackground, Button, CustomTextInput } from "@components/";
-import { FC, useEffect, useRef } from "react";
-import { FlatList, Keyboard, Text, TouchableOpacity } from "react-native";
+import { FC, useEffect, useRef, useState } from "react";
+import { FlatList, Keyboard, Text, TouchableOpacity, View } from "react-native";
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
-import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading } from "@store/";
-import { ChatBubble, ChatContainer, ChatWrapper, HeaderContainer, InputContainer, InputWrapper, SendButton } from "./styles";
+import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat } from "@store/";
+import { ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, SendButton, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
+import Menu from "../../../../assets/icons/menu.svg";
+import Off from "../../../../assets/icons/off.svg";
 import { useChat } from "./useChat";
 import uuid from 'react-native-uuid';
+import ReactNativeModal from "react-native-modal";
 
 const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const dispatch = useDispatch();
     const flatlistRef = useRef<FlatList>(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [selectedChat, setSelectedChat] = useState("");
     const { messageValues } = useChat();
     const {users} = useAppSelector(state => state.database);
     const {isLoading} = useAppSelector(state => state.loading);
@@ -27,34 +32,43 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         flatlistRef.current?.scrollToEnd({ animated: true });
     };
 
+    const handleConnect = async () => {
+        dispatch(setLoading(true))
+        await xmppService.connect({
+            service: hostUrl,
+            domain: hostName,
+            resource: '',
+            username: jid,
+            password: password
+        })
+        dispatch(setLoading(false))
+    }
+
     useEffect(() => {
         console.log(JSON.stringify(users, null, 2));
     }, [users]);
 
     useEffect(() => {
-        if (jid) {
-
+        const execute = async () => {
             if(xmppService.getXMPP() === null) {
-                dispatch(setLoading(true))
-                xmppService.connect({
-                    service: hostUrl,
-                    domain: hostName,
-                    resource: '',
-                    username: jid,
-                    password: password
-                  })
+                await handleConnect();
             }
 
-            xmppService.listenForConnection(() => {
-                dispatch(setLoading(false))
-            })
+            const res = await xmppService.getContacts();
+
+            res.contacts.map((contact) => {
+                dispatch(addChat({user: jid, with: contact.name}));
+            });
 
             xmppService.listenForMessages((from, message) => {
                 console.log(from, message);
                 const parsedFrom = from.split("@")[0];
                 dispatch(addMessage({user: jid, with: parsedFrom, message: {message, from: parsedFrom, uid: uuid.v4().toString()}}));
             });
+        }
 
+        if (jid) {
+            execute();
             return () => {
                 xmppService.disconnect();
             }
@@ -63,7 +77,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
 
     useEffect(() => {
         scrollToBottom();
-    }, [users[jid]?.chats["mon21552"]?.messages]);
+    }, [users[jid]?.chats[selectedChat]?.messages]);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
@@ -90,6 +104,16 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         <AppBackground isSafe>
             <ChatContainer>
                 <HeaderContainer>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setIsMenuOpen(!isMenuOpen);
+                        }}
+                    >
+                        <Menu
+                            width={30}
+                            height={30}
+                        />
+                    </TouchableOpacity>
                     <Text
                         style={{
                             fontSize: 20,
@@ -97,25 +121,13 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             color: "#fff"
                         }}
                     >Chat Screen</Text>
-                    <TouchableOpacity
-                        onPress={() => {
-                            dispatch(clearChats());
-                        }}   
-                    >
-                        <Text style={{color: "#fff"}}>borrar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={handleLogout}   
-                    >
-                        <Text style={{color: "#fff"}}>salir</Text>
-                    </TouchableOpacity>
 
                 </HeaderContainer>
                 <ChatWrapper>
                     {!isLoading && (
                         <FlatList
                             ref={flatlistRef}
-                            data={users[jid]?.chats["mon21552"]?.messages}
+                            data={users[jid]?.chats[selectedChat]?.messages}
                             renderItem={({item}) => {
                                 return (
                                     <ChatBubble
@@ -163,6 +175,114 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                     </SendButton>
                 </InputContainer>
             </ChatContainer>
+            <ReactNativeModal
+                isVisible={isMenuOpen}
+                onBackdropPress={() => {
+                    setIsMenuOpen(false);
+                }}
+                onBackButtonPress={() => {
+                    setIsMenuOpen(false);
+                }}
+
+                style={{
+                    justifyContent: 'flex-start',
+                    margin: 0
+                }}
+
+                animationIn="slideInLeft"
+                animationOut="slideOutLeft"
+            >
+                <MenuContainer>
+                    <UserStatusWrapper>
+                        <UserStatusContainer>
+                            <Text
+                                style={{
+                                    color: "#000",
+                                    fontSize: 20,
+                                    fontWeight: "bold"
+                                }}
+                            >
+                                Connected as:
+                            </Text>
+                            <Text
+                                style={{
+                                    color: "#000",
+                                    fontSize: 18,
+                                }}
+                            >
+                                {jid}
+                            </Text>
+                        </UserStatusContainer>
+                        <LogoutButton>
+                            <Off
+                                width={20}
+                                height={20}
+                                onPress={handleLogout}
+                            />
+                        </LogoutButton>
+                    </UserStatusWrapper>
+                    <ContactsContainer>
+                        <Text
+                            style={{
+                                color: "#000",
+                                fontSize: 20,
+                                fontWeight: "bold"
+                            }}
+                        >
+                            Chats
+                        </Text>
+                        <FlatList
+                            data={Object.keys(users[jid]?.chats)}
+                            renderItem={({item}) => {
+                                return (
+                                    <ContactItem
+                                        onPress={() => {
+                                            setSelectedChat(item);
+                                            setIsMenuOpen(false);
+                                        }}
+                                    >
+                                        <Text
+                                            style={{
+                                                color: "#000",
+                                                fontSize: 18,
+                                            }}
+                                        >
+                                            {item}
+                                        </Text>
+                                    </ContactItem>
+                                )
+                            }}
+                            keyExtractor={(item) => item}
+                            ItemSeparatorComponent={() => {
+                                return (
+                                    <View
+                                        style={{
+                                            height: 5,
+                                        }}
+                                    />
+                                )
+                            }}
+                        />
+                    </ContactsContainer>
+                    <ContactsContainer>
+                        <Text
+                            style={{
+                                color: "#000",
+                                fontSize: 20,
+                                fontWeight: "bold"
+                            }}
+                        >
+                            Groups
+                        </Text>
+                    </ContactsContainer>
+                    <Button
+                        text = "Clear Chats"
+                        onPress={() => {
+                            dispatch(clearChats(jid));
+                        }}
+                    />
+                </MenuContainer>
+            </ReactNativeModal>
         </AppBackground>
     )
 }

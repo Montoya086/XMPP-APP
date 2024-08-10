@@ -53,3 +53,47 @@ export const ChatBubble = styled.View<{
     alignSelf: isSender ? 'flex-end' : 'flex-start',
     marginBottom: theme.sizes.xs,
 }))
+
+export const MenuContainer = styled.View(({ theme }) => ({
+    backgroundColor: theme.colors.background0,
+    padding: theme.sizes.sm,
+    borderTopRightRadius: theme.sizes.xs,
+    borderBottomRightRadius: theme.sizes.xs,
+    flex: 1,
+    width: '70%',
+    flexDirection: 'column',
+    gap: theme.sizes.xs,
+}))
+
+export const UserStatusWrapper = styled.View(({ theme }) => ({
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+}))
+
+export const UserStatusContainer = styled.View(({ theme }) => ({
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+}))
+
+export const ContactsContainer = styled.View(({ theme }) => ({
+    flex: 1,
+    width: '100%',
+    padding: theme.sizes.xs,
+}))
+
+export const LogoutButton = styled.TouchableOpacity(({ theme }) => ({
+    backgroundColor: theme.colors.error,
+    padding: theme.sizes.xs,
+    borderRadius: theme.sizes.xxs,
+    justifyContent: 'center',
+    alignItems: 'center',
+}))
+
+export const ContactItem = styled.TouchableOpacity(({ theme }) => ({
+    padding: theme.sizes.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.background1,
+    borderLeftWidth: 5,
+    borderLeftColor: theme.colors.primary,
+}))

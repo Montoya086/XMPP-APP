@@ -44,13 +44,15 @@ export const databaseSlice = createSlice({
       }
       state.users[action.payload.user].chats[action.payload.with].messages.push(action.payload.message);
     },
-    clearChats: (state) => {
-      // delete all chats
-      for (const user in state.users) {
-        state.users[user].chats = {};
+    addChat: (state, action: PayloadAction<{ user: string; with: string; }>) => {
+      if (!state.users[action.payload.user].chats[action.payload.with]) {
+        state.users[action.payload.user].chats[action.payload.with] = { with: action.payload.with, messages: [] };
       }
+    },
+    clearChats: (state, action: PayloadAction<string>) => {
+      state.users[action.payload].chats = {};
     }
   },
 });
 
-export const { registerUser, addMessage, clearChats } = databaseSlice.actions;
+export const { registerUser, addMessage, clearChats, addChat } = databaseSlice.actions;
