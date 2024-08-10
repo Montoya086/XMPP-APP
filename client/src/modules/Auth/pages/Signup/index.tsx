@@ -38,16 +38,6 @@ const SignUpScreen: FC<RootStackScreenProps<"Signup">> = ({
                         label="Password"
                         error={signUpValues.errors.password?.toString()}
                     />
-                    <CustomTextInput
-                        textInputProps={{
-                            placeholder: "mymail@mail.com",
-                            value: signUpValues.values.email,
-                            onChangeText: signUpValues.handleChange("email"),
-                            secureTextEntry: true,
-                        }}
-                        label="Email"
-                        error={signUpValues.errors.email?.toString()}
-                    />
                     <DropDownMenu
                         items={[
                             {
@@ -69,7 +59,7 @@ const SignUpScreen: FC<RootStackScreenProps<"Signup">> = ({
                         error={signUpValues.errors.serverName?.toString()}
                     />
                     <Button
-                        text="Login"
+                        text="Sign Up"
                         onPress={signUpValues.handleSubmit}
                     />
                     <SignUpTextNormal>

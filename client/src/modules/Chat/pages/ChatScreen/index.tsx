@@ -1,6 +1,6 @@
 import { AppBackground, Button, CustomTextInput } from "@components/";
 import { FC, useEffect, useRef } from "react";
-import { FlatList, Keyboard, Text } from "react-native";
+import { FlatList, Keyboard, Text, TouchableOpacity } from "react-native";
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
@@ -97,12 +97,19 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             color: "#fff"
                         }}
                     >Chat Screen</Text>
-                    <Button
-                        text="borrar"
+                    <TouchableOpacity
                         onPress={() => {
                             dispatch(clearChats());
-                        }}
-                    />
+                        }}   
+                    >
+                        <Text style={{color: "#fff"}}>borrar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={handleLogout}   
+                    >
+                        <Text style={{color: "#fff"}}>salir</Text>
+                    </TouchableOpacity>
+
                 </HeaderContainer>
                 <ChatWrapper>
                     {!isLoading && (
