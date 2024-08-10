@@ -14,6 +14,7 @@ import Logo from "../../../../assets/icons/logo.svg";
 import { useChat } from "./useChat";
 import uuid from 'react-native-uuid';
 import ReactNativeModal from "react-native-modal";
+import Toast from "react-native-toast-message";
 
 const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const dispatch = useDispatch();
@@ -66,6 +67,14 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 console.log(from, message);
                 const parsedFrom = from.split("@")[0];
                 dispatch(addMessage({user: jid, with: parsedFrom, message: {message, from: parsedFrom, uid: uuid.v4().toString()}}));
+                if (currentChat !== parsedFrom) {
+                    //custom toast
+                    Toast.show({
+                        type: "info",
+                        text1: "New Message",
+                        text2: `You have a new message from ${parsedFrom}`
+                    });
+                }
             });
         }
 
@@ -231,6 +240,14 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             >
                                 {jid}
                             </Text>
+                            <Text
+                                style={{
+                                    color: "#000",
+                                    fontSize: 10,
+                                }}
+                            >
+                                {hostName}
+                            </Text>
                         </UserStatusContainer>
                         <LogoutButton>
                             <Off
@@ -300,7 +317,6 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                     fontWeight: "bold"
                                 }}
                             >
-
                                 Groups
                             </Text>
                             <AddButton>
