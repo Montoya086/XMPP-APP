@@ -14,7 +14,7 @@ export const useChat = () => {
     });
 
     const dispatch = useDispatch();
-    const { jid } = useAppSelector(state => state.user);
+    const { jid, hostName } = useAppSelector(state => state.user);
     const {jid: currentChat} = useAppSelector(state => state.chatSlice);
 
     const {...messageValues} = useFormik({
@@ -24,8 +24,8 @@ export const useChat = () => {
         validationSchema: validationSchema,
         onSubmit: (values) => {
             try{
-                sendMessage(values.message, currentChat);
-                dispatch(addMessage({ user: jid, with: "mon21552", message: { message: values.message, from: jid, uid: uuid.v4().toString() } }));
+                sendMessage(values.message, currentChat+"@"+hostName);
+                dispatch(addMessage({ user: jid, with:currentChat, message: { message: values.message, from: jid, uid: uuid.v4().toString() } }));
             } catch (error: any) {
                 Toast.show({
                     type: "error",
