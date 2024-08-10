@@ -13,7 +13,7 @@ import {
 } from "redux-persist";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { loadingSlice } from "../slices/Loading-slice";
-import { userSlice } from "../slices";
+import { chatSlice, userSlice } from "../slices";
 import { databaseSlice } from "../slices/Database-slice";
 
 const appPersistConfig = {
@@ -43,6 +43,7 @@ const rootReducer = combineReducers({
   database: persistReducer<DatabaseState>(databasePersistConfig, databaseSlice.reducer),
   loading: loadingSlice.reducer,
   userSlice: userSlice.reducer,
+  chatSlice: chatSlice.reducer,
 });
 
 export const store = configureStore({

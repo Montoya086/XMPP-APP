@@ -68,6 +68,7 @@ class XMPPService {
 
   listenForMessages(callback: (from: string, message: string) => void): void {
     if (this.xmpp) {
+      this.xmpp.removeAllListeners('stanza');
       this.xmpp.on('stanza', (stanza: any) => {
         if (stanza.is('message') && stanza.getChild('body')) {
           const from = stanza.attrs.from;
@@ -160,8 +161,9 @@ class XMPPService {
       }
       return { contacts: [] };
     } else {
-      return { contacts: [] };
+      
       console.error('XMPP client is not connected');
+      return { contacts: [] };
     }
   }
 

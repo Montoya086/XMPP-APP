@@ -97,3 +97,31 @@ export const ContactItem = styled.TouchableOpacity(({ theme }) => ({
     borderLeftWidth: 5,
     borderLeftColor: theme.colors.primary,
 }))
+
+export const SectionTitleContainer = styled.View(({ theme }) => ({
+    padding: theme.sizes.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+}))
+
+export const AddButton = styled.TouchableOpacity(({ theme }) => ({
+    backgroundColor: theme.colors.primary,
+    padding: theme.sizes.xxs,
+    borderRadius: theme.sizes.xxs,
+    justifyContent: 'center',
+    alignItems: 'center',
+}))
+
+export const NoChatWrapper = styled.View(({ theme }) => ({
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.sizes.xs,
+}))
+
+export const NoChatText = styled.Text(({ theme }) => ({
+    color: theme.colors.primary,
+    fontSize: theme.sizes.lg,
+    fontWeight: 'bold',
+}))

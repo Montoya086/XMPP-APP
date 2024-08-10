@@ -4,11 +4,13 @@ import { FlatList, Keyboard, Text, TouchableOpacity, View } from "react-native";
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
-import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat } from "@store/";
-import { ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, SendButton, UserStatusContainer, UserStatusWrapper } from "./styles";
+import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat } from "@store/";
+import { AddButton, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
 import Off from "../../../../assets/icons/off.svg";
+import Plus from "../../../../assets/icons/plus.svg";
+import Logo from "../../../../assets/icons/logo.svg";
 import { useChat } from "./useChat";
 import uuid from 'react-native-uuid';
 import ReactNativeModal from "react-native-modal";
@@ -17,10 +19,10 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const dispatch = useDispatch();
     const flatlistRef = useRef<FlatList>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [selectedChat, setSelectedChat] = useState("");
     const { messageValues } = useChat();
     const {users} = useAppSelector(state => state.database);
     const {isLoading} = useAppSelector(state => state.loading);
+    const { jid:currentChat, type: currentChatType } = useAppSelector(state => state.chatSlice);
     const {
         hostName,
         hostUrl,
@@ -77,7 +79,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
 
     useEffect(() => {
         scrollToBottom();
-    }, [users[jid]?.chats[selectedChat]?.messages]);
+    }, [users[jid]?.chats[currentChat]?.messages]);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
@@ -124,56 +126,73 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
 
                 </HeaderContainer>
                 <ChatWrapper>
-                    {!isLoading && (
-                        <FlatList
-                            ref={flatlistRef}
-                            data={users[jid]?.chats[selectedChat]?.messages}
-                            renderItem={({item}) => {
-                                return (
-                                    <ChatBubble
-                                        isSender={item.from === jid}
-                                        onLayout={() => {
-                                            scrollToBottom();
-                                        }}
-                                    >
-                                        <Text
-                                            style={{
-                                                color: "#fff"
-                                            }}
-                                        >
-                                            {item.message}
-                                        </Text>
-                                    </ChatBubble>
-                                )
-                            }}
-                            keyExtractor={(item) => item.uid}
-                            style={{
-                                padding: 10
-                            }}
-                        />
+                    {currentChat ? (
+                        <>
+                            {!isLoading && (
+                                <FlatList
+                                    ref={flatlistRef}
+                                    data={users[jid]?.chats[currentChat]?.messages}
+                                    renderItem={({item}) => {
+                                        return (
+                                            <ChatBubble
+                                                isSender={item.from === jid}
+                                                onLayout={() => {
+                                                    scrollToBottom();
+                                                }}
+                                            >
+                                                <Text
+                                                    style={{
+                                                        color: "#fff"
+                                                    }}
+                                                >
+                                                    {item.message}
+                                                </Text>
+                                            </ChatBubble>
+                                        )
+                                    }}
+                                    keyExtractor={(item) => item.uid}
+                                    style={{
+                                        padding: 10
+                                    }}
+                                />
+                            )}
+                        </>
+                    ):(
+                        <NoChatWrapper>
+                            <Logo
+                            width={250}
+                            height={150}
+                            />
+                            <NoChatText>
+                                No chat selected
+                            </NoChatText>
+                        </NoChatWrapper>
                     )}
+                    
                 </ChatWrapper>
-                <InputContainer>
-                    <InputWrapper>
-                        <CustomTextInput
-                            textInputProps={{
-                                placeholder: "Type a message",
-                                value: messageValues.values.message,
-                                onChangeText: messageValues.handleChange("message"),
+                {currentChat && (
+                    <InputContainer>
+                        <InputWrapper>
+                            <CustomTextInput
+                                textInputProps={{
+                                    placeholder: "Type a message",
+                                    value: messageValues.values.message,
+                                    onChangeText: messageValues.handleChange("message"),
+                                }}
+                            />
+                        </InputWrapper>
+                        <SendButton
+                            onPress={() => {
+                                messageValues.handleSubmit();
                             }}
-                        />
-                    </InputWrapper>
-                    <SendButton
-                        onPress={() => {
-                            messageValues.handleSubmit();
-                        }}
-                    >
-                        <Send
-                            width={30}
-                            height={30}
-                        />
-                    </SendButton>
-                </InputContainer>
+                        >
+                            <Send
+                                width={30}
+                                height={30}
+                            />
+                        </SendButton>
+                    </InputContainer>
+                )}
             </ChatContainer>
             <ReactNativeModal
                 isVisible={isMenuOpen}
@@ -222,22 +241,30 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                         </LogoutButton>
                     </UserStatusWrapper>
                     <ContactsContainer>
-                        <Text
-                            style={{
-                                color: "#000",
-                                fontSize: 20,
-                                fontWeight: "bold"
-                            }}
-                        >
-                            Chats
-                        </Text>
+                        <SectionTitleContainer>
+                            <Text
+                                style={{
+                                    color: "#000",
+                                    fontSize: 20,
+                                    fontWeight: "bold"
+                                }}
+                            >
+                                Chats
+                            </Text>
+                            <AddButton>
+                                <Plus
+                                    width={15}
+                                    height={15}
+                                />
+                            </AddButton>
+                        </SectionTitleContainer>
                         <FlatList
                             data={Object.keys(users[jid]?.chats)}
                             renderItem={({item}) => {
                                 return (
                                     <ContactItem
                                         onPress={() => {
-                                            setSelectedChat(item);
+                                            dispatch(setCurrentChat({jid: item}));
                                             setIsMenuOpen(false);
                                         }}
                                     >
@@ -265,15 +292,24 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                         />
                     </ContactsContainer>
                     <ContactsContainer>
-                        <Text
-                            style={{
-                                color: "#000",
-                                fontSize: 20,
-                                fontWeight: "bold"
-                            }}
-                        >
-                            Groups
-                        </Text>
+                        <SectionTitleContainer>
+                            <Text
+                                style={{
+                                    color: "#000",
+                                    fontSize: 20,
+                                    fontWeight: "bold"
+                                }}
+                            >
+
+                                Groups
+                            </Text>
+                            <AddButton>
+                                <Plus
+                                    width={15}
+                                    height={15}
+                                />
+                            </AddButton>
+                        </SectionTitleContainer>
                     </ContactsContainer>
                     <Button
                         text = "Clear Chats"

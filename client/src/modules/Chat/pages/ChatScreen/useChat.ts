@@ -15,6 +15,7 @@ export const useChat = () => {
 
     const dispatch = useDispatch();
     const { jid } = useAppSelector(state => state.user);
+    const {jid: currentChat} = useAppSelector(state => state.chatSlice);
 
     const {...messageValues} = useFormik({
         initialValues: {
@@ -23,7 +24,7 @@ export const useChat = () => {
         validationSchema: validationSchema,
         onSubmit: (values) => {
             try{
-                sendMessage(values.message);
+                sendMessage(values.message, currentChat);
                 dispatch(addMessage({ user: jid, with: "mon21552", message: { message: values.message, from: jid, uid: uuid.v4().toString() } }));
             } catch (error: any) {
                 Toast.show({
@@ -38,10 +39,12 @@ export const useChat = () => {
         }
     });
 
-    const to = "mon21552@alumchat.lol"
-
-    const sendMessage = (message: string) => {
+    const sendMessage = (message: string, to: string) => {
         xmppService.sendMessage(to, message);
+    }
+
+    const addContact = (jid: string) => {
+
     }
 
     return {
