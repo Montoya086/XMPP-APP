@@ -35,6 +35,10 @@ class XMPPService {
           resolve();
         });
 
+        this.xmpp.on('message', (msg) => {
+          console.log('📬', 'Message received:', msg.toString());
+        });
+
         this.xmpp.start().catch(reject);
       } else {
         resolve();
@@ -69,7 +73,6 @@ class XMPPService {
 
   listenForMessages(callback: (from: string, message: string) => void): void {
     if (this.xmpp) {
-      this.xmpp.removeAllListeners('stanza');
       this.xmpp.on('stanza', (stanza: any) => {
         if (stanza.is('message') && stanza.getChild('body')) {
           const from = stanza.attrs.from;
@@ -86,6 +89,26 @@ class XMPPService {
     if (this.xmpp) {
       this.xmpp.on('online', async () => {
         callback();
+      });
+    } else {
+      console.error('XMPP client is not connected');
+    }
+  }
+
+  listenForPresenceUpdates(callback: (status: "online" | "away" | "xa" | "dnd" | "offline", from: string) => void): void {
+    if (this.xmpp) {
+      this.xmpp.on('stanza', (stanza: any) => {
+        if (stanza.is('presence')) {
+          const from = stanza.attrs.from;
+          const type = stanza.attrs.type;
+          if (type === 'unavailable'){
+            callback('offline', from);
+            return;
+          }
+          const show = stanza.getChild('show');
+          const status = show ? show.text() : 'online';
+          callback(status, from);
+        }
       });
     } else {
       console.error('XMPP client is not connected');
@@ -180,6 +203,26 @@ class XMPPService {
     } else {
       console.error('XMPP client is not connected');
       return false;
+    }
+  }
+
+  async updatePresence(status: string): Promise<void> {
+    if (this.xmpp) {
+      let presence;
+      if (status === 'online') {
+        presence = xml('presence');  // Sin 'show' para 'online'
+      } else {
+        presence = xml(
+          'presence',
+          {},
+          xml('show', {}, status)  // Elemento 'show' para otros estados
+        );
+      }
+  
+      await this.xmpp.send(presence);
+      console.log(`🔄 Status updated to: ${status}`);
+    } else {
+      console.error('XMPP client is not connected');
     }
   }
 

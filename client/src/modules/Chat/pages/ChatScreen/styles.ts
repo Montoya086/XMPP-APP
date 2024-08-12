@@ -100,6 +100,12 @@ export const ContactItem = styled.TouchableOpacity<{
     borderLeftColor: theme.colors.primary,
 }))
 
+export const ContactItemNameStatus = styled.View(({ theme }) => ({
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.sizes.xs,
+}))
+
 export const SectionTitleContainer = styled.View(({ theme }) => ({
     padding: theme.sizes.xs,
     flexDirection: 'row',
@@ -137,4 +143,26 @@ export const AddContactModalContainer = styled.View(({ theme }) => ({
     margin: theme.sizes.sm,
     borderRadius: theme.sizes.xs,
     gap: theme.sizes.xs,
+}))
+
+const getColor = (status: "online" | "away" | "xa" | "dnd" | "offline") => {
+    switch(status){
+        case "online":
+            return "#00FF00";
+        case "away":
+            return "#FFFF00";
+        case "xa":
+            return "#FFA500";
+        case "dnd":
+            return "#FF0000";
+        case "offline":
+            return "#000000";
+    }
+}
+
+export const StatusBall = styled.View<{status: "online" | "away" | "xa" | "dnd" | "offline"}>(({ theme,status }) => ({
+    width: theme.sizes.xs,
+    height: theme.sizes.xs,
+    borderRadius: theme.sizes.xs,
+    backgroundColor: getColor(status),
 }))

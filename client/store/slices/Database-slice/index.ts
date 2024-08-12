@@ -10,6 +10,8 @@ export interface Message{
 export interface Chat {
     with: string;
     messages: Message[];
+    status?: "online" | "away" | "xa" | "dnd" | "offline" ;
+    nonRead?: number;
 }
 
 export interface User_Chat {
@@ -40,19 +42,25 @@ export const databaseSlice = createSlice({
     },
     addMessage: (state, action: PayloadAction<{ user: string; with: string; message: Message }>) => {
       if (!state.users[action.payload.user].chats[action.payload.with]) {
-        state.users[action.payload.user].chats[action.payload.with] = { with: action.payload.with, messages: [] };
+        state.users[action.payload.user].chats[action.payload.with] = { with: action.payload.with, messages: [], status: "offline", nonRead: 0 };
       }
       state.users[action.payload.user].chats[action.payload.with].messages.push(action.payload.message);
     },
     addChat: (state, action: PayloadAction<{ user: string; with: string; }>) => {
       if (!state.users[action.payload.user].chats[action.payload.with]) {
-        state.users[action.payload.user].chats[action.payload.with] = { with: action.payload.with, messages: [] };
+        state.users[action.payload.user].chats[action.payload.with] = { with: action.payload.with, messages: [], status: "offline", nonRead: 0 };
       }
     },
     clearChats: (state, action: PayloadAction<string>) => {
       state.users[action.payload].chats = {};
-    }
+    },
+    changeStatus: (state, action: PayloadAction<{ user: string; with: string; status: "online" | "away" | "xa" | "dnd" | "offline" }>) => {
+      state.users[action.payload.user].chats[action.payload.with].status = action.payload.status;
+    },
+    incrementNonRead: (state, action: PayloadAction<{ user: string; with: string }>) => {
+      //state.users[action.payload.user].chats[action.payload.with].nonRead = (state.users[action.payload.user].chats[action.payload.with].nonRead || 0) + 1;
+    },
   },
 });
 
-export const { registerUser, addMessage, clearChats, addChat } = databaseSlice.actions;
+export const { registerUser, addMessage, clearChats, addChat, changeStatus, incrementNonRead } = databaseSlice.actions;

@@ -4,8 +4,8 @@ import { FlatList, Keyboard, Text, TouchableOpacity, View } from "react-native";
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
-import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat } from "@store/";
-import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, UserStatusContainer, UserStatusWrapper } from "./styles";
+import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus } from "@store/";
+import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
 import Off from "../../../../assets/icons/off.svg";
@@ -21,6 +21,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const flatlistRef = useRef<FlatList>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+    const [myStatus, setMyStatus] = useState<"online" | "away" | "xa" | "dnd" | "offline">("offline");
     const { messageValues, contactValues } = useChat({
         onContactSubmit: () => {
             setIsAddContactOpen(false);
@@ -71,6 +72,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         const execute = async () => {
             if(xmppService.getXMPP() === null) {
                 await handleConnect();
+                xmppService.updatePresence("online");
             }
 
             const res = await xmppService.getContacts();
@@ -84,6 +86,14 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 const parsedFrom = from.split("@")[0];
                 dispatch(addMessage({user: jid, with: parsedFrom, message: {message, from: parsedFrom, uid: uuid.v4().toString()}}));
                 handleNotification(parsedFrom);
+            });
+
+            xmppService.listenForPresenceUpdates((status, from) => {
+                if (from.split("@")[0] === jid) {
+                    setMyStatus(status);
+                    return;
+                }
+                dispatch(changeStatus({user: jid, with: from.split("@")[0], status}));
             });
         }
 
@@ -243,14 +253,19 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             >
                                 Connected as:
                             </Text>
-                            <Text
-                                style={{
-                                    color: "#000",
-                                    fontSize: 18,
-                                }}
-                            >
-                                {jid}
-                            </Text>
+                            <ContactItemNameStatus>
+                                <Text
+                                    style={{
+                                        color: "#000",
+                                        fontSize: 18,
+                                    }}
+                                >
+                                    {jid}
+                                </Text>
+                                <StatusBall
+                                    status={myStatus}
+                                />
+                            </ContactItemNameStatus>
                             <Text
                                 style={{
                                     color: "#000",
@@ -294,6 +309,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             data={Object.keys(users[jid]?.chats)}
                             renderItem={({item}) => {
                                 return (
+                                    
                                     <ContactItem
                                         onPress={() => {
                                             dispatch(setCurrentChat({jid: item}));
@@ -301,14 +317,19 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                         }}
                                         isSelected={currentChat === item}
                                     >
-                                        <Text
-                                            style={{
-                                                color: "#000",
-                                                fontSize: 18,
-                                            }}
-                                        >
-                                            {item}
-                                        </Text>
+                                        <ContactItemNameStatus>
+                                            <Text
+                                                style={{
+                                                    color: "#000",
+                                                    fontSize: 18,
+                                                }}
+                                            >
+                                                {item}
+                                            </Text>
+                                            <StatusBall
+                                                status={users[jid]?.chats[item]?.status || "offline"}
+                                            />
+                                        </ContactItemNameStatus>
                                     </ContactItem>
                                 )
                             }}
