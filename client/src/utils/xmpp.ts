@@ -30,7 +30,7 @@ class XMPPService {
 
         this.xmpp.on('online', async (address: any) => {
           console.log('✅', 'Connected as', address.toString());
-
+          
           await this.xmpp!.send(xml('presence'));
           resolve();
         });
@@ -44,6 +44,7 @@ class XMPPService {
 
   disconnect(): void {
     if (this.xmpp) {
+      this.xmpp.removeAllListeners('stanza');
       this.xmpp.stop().catch(console.error);
       this.xmpp = null;
     }
@@ -164,6 +165,21 @@ class XMPPService {
       
       console.error('XMPP client is not connected');
       return { contacts: [] };
+    }
+  }
+
+  async addContact(contactJid: string): Promise<boolean> {
+    if (this.xmpp) {
+      const presence = xml(
+        'presence',
+        { type: 'subscribe', to: contactJid }
+      );
+      await this.xmpp.send(presence);
+      console.log(`📬 Request sent to add contact: ${contactJid}`);
+      return true;
+    } else {
+      console.error('XMPP client is not connected');
+      return false;
     }
   }
 

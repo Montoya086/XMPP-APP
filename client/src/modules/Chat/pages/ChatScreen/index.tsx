@@ -5,7 +5,7 @@ import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
 import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat } from "@store/";
-import { AddButton, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, UserStatusContainer, UserStatusWrapper } from "./styles";
+import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
 import Off from "../../../../assets/icons/off.svg";
@@ -20,7 +20,12 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const dispatch = useDispatch();
     const flatlistRef = useRef<FlatList>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { messageValues } = useChat();
+    const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+    const { messageValues, contactValues } = useChat({
+        onContactSubmit: () => {
+            setIsAddContactOpen(false);
+        }
+    });
     const {users} = useAppSelector(state => state.database);
     const {isLoading} = useAppSelector(state => state.loading);
     const { jid:currentChat, type: currentChatType } = useAppSelector(state => state.chatSlice);
@@ -47,6 +52,17 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         dispatch(setLoading(false))
     }
 
+    const handleNotification = (from: string) => {
+        if (currentChat !== from) {
+            //custom toast
+            Toast.show({
+                type: "info",
+                text1: "New Message",
+                text2: `You have a new message from ${from}`
+            });
+        }
+    }
+
     useEffect(() => {
         console.log(JSON.stringify(users, null, 2));
     }, [users]);
@@ -67,22 +83,15 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 console.log(from, message);
                 const parsedFrom = from.split("@")[0];
                 dispatch(addMessage({user: jid, with: parsedFrom, message: {message, from: parsedFrom, uid: uuid.v4().toString()}}));
-                if (currentChat !== parsedFrom) {
-                    //custom toast
-                    Toast.show({
-                        type: "info",
-                        text1: "New Message",
-                        text2: `You have a new message from ${parsedFrom}`
-                    });
-                }
+                handleNotification(parsedFrom);
             });
         }
 
         if (jid) {
             execute();
-            return () => {
-                xmppService.disconnect();
-            }
+        }
+        return () => {
+            xmppService.disconnect();
         }
     }, [jid]);
 
@@ -113,6 +122,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
 
     return (
         <AppBackground isSafe>
+            {/* Chat Screen */}
             <ChatContainer>
                 <HeaderContainer>
                     <TouchableOpacity
@@ -203,6 +213,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                     </InputContainer>
                 )}
             </ChatContainer>
+            {/* Menu Modal*/}
             <ReactNativeModal
                 isVisible={isMenuOpen}
                 onBackdropPress={() => {
@@ -268,7 +279,11 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             >
                                 Chats
                             </Text>
-                            <AddButton>
+                            <AddButton
+                                onPress={() => {
+                                    setIsAddContactOpen(true);
+                                }}
+                            >
                                 <Plus
                                     width={15}
                                     height={15}
@@ -284,6 +299,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                             dispatch(setCurrentChat({jid: item}));
                                             setIsMenuOpen(false);
                                         }}
+                                        isSelected={currentChat === item}
                                     >
                                         <Text
                                             style={{
@@ -334,6 +350,40 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                         }}
                     />
                 </MenuContainer>
+            </ReactNativeModal>
+            {/* Add Contact Modal */}
+            <ReactNativeModal
+                isVisible={isAddContactOpen}
+                onBackdropPress={() => {
+                    setIsAddContactOpen(false);
+                }}
+                onBackButtonPress={() => {
+                    setIsAddContactOpen(false);
+                }}
+
+                style={{
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    margin: 0,
+                    flexDirection: 'row',
+                }}
+
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+            >
+                <AddContactModalContainer>
+                    <CustomTextInput
+                        textInputProps={{
+                            placeholder: "Enter contact jid",
+                            value: contactValues.values.contact,
+                            onChangeText: contactValues.handleChange("contact"),
+                        }}
+                    />
+                    <Button
+                        text = "Add Contact"
+                        onPress={contactValues.handleSubmit}
+                    />
+                </AddContactModalContainer>
             </ReactNativeModal>
         </AppBackground>
     )

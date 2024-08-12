@@ -90,11 +90,13 @@ export const LogoutButton = styled.TouchableOpacity(({ theme }) => ({
     alignItems: 'center',
 }))
 
-export const ContactItem = styled.TouchableOpacity(({ theme }) => ({
+export const ContactItem = styled.TouchableOpacity<{
+    isSelected: boolean
+}>(({ theme, isSelected }) => ({
     padding: theme.sizes.xs,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.background1,
-    borderLeftWidth: 5,
+    borderLeftWidth: isSelected ? 10 : 5,
     borderLeftColor: theme.colors.primary,
 }))
 
@@ -124,4 +126,15 @@ export const NoChatText = styled.Text(({ theme }) => ({
     color: theme.colors.primary,
     fontSize: theme.sizes.lg,
     fontWeight: 'bold',
+}))
+
+export const AddContactModalContainer = styled.View(({ theme }) => ({
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+    backgroundColor: theme.colors.background0,
+    padding: theme.sizes.sm,
+    margin: theme.sizes.sm,
+    borderRadius: theme.sizes.xs,
+    gap: theme.sizes.xs,
 }))
