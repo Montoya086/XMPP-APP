@@ -52,6 +52,7 @@ export const ChatBubble = styled.View<{
     minWidth: '30%',
     alignSelf: isSender ? 'flex-end' : 'flex-start',
     marginBottom: theme.sizes.xs,
+    gap: theme.sizes.xxs,
 }))
 
 export const MenuContainer = styled.View(({ theme }) => ({
@@ -71,7 +72,7 @@ export const UserStatusWrapper = styled.View(({ theme }) => ({
     justifyContent: 'space-between',
 }))
 
-export const UserStatusContainer = styled.View(({ theme }) => ({
+export const UserStatusContainer = styled.TouchableOpacity(({ theme }) => ({
     flexDirection: 'column',
     alignItems: 'flex-start',
 }))
@@ -156,7 +157,7 @@ const getColor = (status: "online" | "away" | "xa" | "dnd" | "offline") => {
         case "dnd":
             return "#FF0000";
         case "offline":
-            return "#000000";
+            return "gray";
     }
 }
 
@@ -165,4 +166,16 @@ export const StatusBall = styled.View<{status: "online" | "away" | "xa" | "dnd" 
     height: theme.sizes.xs,
     borderRadius: theme.sizes.xs,
     backgroundColor: getColor(status),
+    borderWidth: 1,
+    borderColor: theme.colors.foreground4,
+}))
+
+export const StatusCard = styled.TouchableOpacity(({ theme }) => ({
+    padding: theme.sizes.xs,
+    borderRadius: theme.sizes.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.foreground0,
+    width: '100%',
+    flexDirection: 'row',
+    gap: theme.sizes.xs,
 }))

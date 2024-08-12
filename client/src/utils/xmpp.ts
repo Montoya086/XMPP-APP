@@ -35,10 +35,6 @@ class XMPPService {
           resolve();
         });
 
-        this.xmpp.on('message', (msg) => {
-          console.log('📬', 'Message received:', msg.toString());
-        });
-
         this.xmpp.start().catch(reject);
       } else {
         resolve();
@@ -51,6 +47,12 @@ class XMPPService {
       this.xmpp.removeAllListeners('stanza');
       this.xmpp.stop().catch(console.error);
       this.xmpp = null;
+    }
+  }
+
+  removeStanzaListener(): void {
+    if (this.xmpp) {
+      this.xmpp.removeAllListeners('stanza');
     }
   }
 
@@ -71,13 +73,21 @@ class XMPPService {
     }
   }
 
-  listenForMessages(callback: (from: string, message: string) => void): void {
+  listenForMessages(callback: (from: string, message: string, type: "single" | "group", room?: string) => void): void {
     if (this.xmpp) {
+      this.xmpp.removeAllListeners('stanza');
       this.xmpp.on('stanza', (stanza: any) => {
         if (stanza.is('message') && stanza.getChild('body')) {
           const from = stanza.attrs.from;
           const body = stanza.getChild('body').text();
-          callback(from, body);
+          callback(from, body, "single");
+        } else {
+          //get group chat invitation
+          if (stanza.is('message') && stanza.getChild('x') && stanza.getChild('x').attrs.xmlns === 'jabber:x:conference') {
+            const from = stanza.attrs.from;
+            const room = stanza.getChild('x').attrs.jid;
+            callback(from, "", "group", room);
+          }
         }
       });
     } else {
@@ -206,16 +216,16 @@ class XMPPService {
     }
   }
 
-  async updatePresence(status: string): Promise<void> {
+  async updatePresence(status: "online" | "away" | "xa" | "dnd" | "offline"): Promise<void> {
     if (this.xmpp) {
       let presence;
       if (status === 'online') {
-        presence = xml('presence');  // Sin 'show' para 'online'
+        presence = xml('presence');
       } else {
         presence = xml(
           'presence',
           {},
-          xml('show', {}, status)  // Elemento 'show' para otros estados
+          xml('show', {}, status),
         );
       }
   

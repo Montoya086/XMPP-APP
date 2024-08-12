@@ -5,7 +5,7 @@ import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
 import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead } from "@store/";
-import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, UserStatusContainer, UserStatusWrapper } from "./styles";
+import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
 import Off from "../../../../assets/icons/off.svg";
@@ -21,6 +21,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const flatlistRef = useRef<FlatList>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+    const [isChangeStatusOpen, setIsChangeStatusOpen] = useState(false);
     const [myStatus, setMyStatus] = useState<"online" | "away" | "xa" | "dnd" | "offline">("offline");
     const { messageValues, contactValues } = useChat({
         onContactSubmit: () => {
@@ -65,9 +66,9 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         }
     }
 
-    useEffect(() => {
+    /* useEffect(() => {
         console.log(JSON.stringify(users, null, 2));
-    }, [users]);
+    }, [users]); */
 
     useEffect(() => {
         const execute = async () => {
@@ -76,17 +77,26 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 xmppService.updatePresence("online");
             }
 
+            xmppService.removeStanzaListener();
+
             const res = await xmppService.getContacts();
 
             res.contacts.map((contact) => {
                 dispatch(addChat({user: jid, with: contact.name}));
             });
 
-            xmppService.listenForMessages((from, message) => {
-                console.log(from, message);
-                const parsedFrom = from.split("@")[0];
-                dispatch(addMessage({user: jid, with: parsedFrom, message: {message, from: parsedFrom, uid: uuid.v4().toString()}}));
-                handleNotification(parsedFrom);
+            xmppService.listenForMessages((from, message, type, room) => {
+                console.log(from, message, type);
+                if (type !== "single") {
+                    const parsedFrom = from.split("@")[0];
+                    dispatch(addMessage({user: jid, with: parsedFrom, message: {message, from: parsedFrom, uid: uuid.v4().toString()}}));
+                    handleNotification(parsedFrom);
+                } else {
+                    if (room){
+
+                    }
+                }
+                
             });
 
             xmppService.listenForPresenceUpdates((status, from) => {
@@ -172,6 +182,14 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                             >
                                                 <Text
                                                     style={{
+                                                        color: "#fff",
+                                                        fontWeight: "bold"
+                                                    }}
+                                                >
+                                                    {item.from}
+                                                </Text>
+                                                <Text
+                                                    style={{
                                                         color: "#fff"
                                                     }}
                                                 >
@@ -244,7 +262,11 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
             >
                 <MenuContainer>
                     <UserStatusWrapper>
-                        <UserStatusContainer>
+                        <UserStatusContainer
+                            onPress={() => {
+                                setIsChangeStatusOpen(true);
+                            }}
+                        >
                             <Text
                                 style={{
                                     color: "#000",
@@ -414,6 +436,81 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                         text = "Add Contact"
                         onPress={contactValues.handleSubmit}
                     />
+                </AddContactModalContainer>
+            </ReactNativeModal>
+            {/* Change Status Modal */}
+            <ReactNativeModal
+                isVisible={isChangeStatusOpen}
+                onBackdropPress={() => {
+                    setIsChangeStatusOpen(false);
+                }}
+                onBackButtonPress={() => {
+                    setIsChangeStatusOpen(false);
+                }}
+
+                style={{
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    margin: 0,
+                    flexDirection: 'row',
+                }}
+
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+            >
+                <AddContactModalContainer>
+                    <StatusCard
+                        onPress={() => {
+                            xmppService.updatePresence("online");
+                            setIsChangeStatusOpen(false);
+                        }}
+                    >
+                        <Text>
+                            Online
+                        </Text>
+                        <StatusBall
+                            status="online"
+                        />
+                    </StatusCard>
+                    <StatusCard
+                        onPress={() => {
+                            xmppService.updatePresence("away");
+                            setIsChangeStatusOpen(false);
+                        }}
+                    >
+                        <Text>
+                            Away
+                        </Text>
+                        <StatusBall
+                            status="away"
+                        />
+                    </StatusCard>
+                    <StatusCard
+                        onPress={() => {
+                            xmppService.updatePresence("xa");
+                            setIsChangeStatusOpen(false);
+                        }}
+                    >
+                        <Text>
+                            Extended Away
+                        </Text>
+                        <StatusBall
+                            status="xa"
+                        />
+                    </StatusCard>
+                    <StatusCard
+                        onPress={() => {
+                            xmppService.updatePresence("dnd");
+                            setIsChangeStatusOpen(false);
+                        }}
+                    >
+                        <Text>
+                            Do Not Disturb
+                        </Text>
+                        <StatusBall
+                            status="dnd"
+                        />
+                    </StatusCard>
                 </AddContactModalContainer>
             </ReactNativeModal>
         </AppBackground>
