@@ -58,9 +58,12 @@ export const databaseSlice = createSlice({
       state.users[action.payload.user].chats[action.payload.with].status = action.payload.status;
     },
     incrementNonRead: (state, action: PayloadAction<{ user: string; with: string }>) => {
-      //state.users[action.payload.user].chats[action.payload.with].nonRead = (state.users[action.payload.user].chats[action.payload.with].nonRead || 0) + 1;
+      state.users[action.payload.user].chats[action.payload.with].nonRead = (state.users[action.payload.user].chats[action.payload.with].nonRead || 0) + 1;
     },
+    resetNonRead: (state, action: PayloadAction<{ user: string; with: string }>) => {
+      state.users[action.payload.user].chats[action.payload.with].nonRead = 0;
+    }
   },
 });
 
-export const { registerUser, addMessage, clearChats, addChat, changeStatus, incrementNonRead } = databaseSlice.actions;
+export const { registerUser, addMessage, clearChats, addChat, changeStatus, incrementNonRead, resetNonRead } = databaseSlice.actions;

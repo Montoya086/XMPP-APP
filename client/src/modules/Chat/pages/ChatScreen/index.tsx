@@ -4,7 +4,7 @@ import { FlatList, Keyboard, Text, TouchableOpacity, View } from "react-native";
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
-import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus } from "@store/";
+import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead } from "@store/";
 import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
@@ -61,6 +61,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 text1: "New Message",
                 text2: `You have a new message from ${from}`
             });
+            dispatch(incrementNonRead({user: jid, with: from}));
         }
     }
 
@@ -313,6 +314,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                     <ContactItem
                                         onPress={() => {
                                             dispatch(setCurrentChat({jid: item}));
+                                            dispatch(resetNonRead({user: jid, with: item}));
                                             setIsMenuOpen(false);
                                         }}
                                         isSelected={currentChat === item}
@@ -330,6 +332,14 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                                 status={users[jid]?.chats[item]?.status || "offline"}
                                             />
                                         </ContactItemNameStatus>
+                                        <Text
+                                            style={{
+                                                color: "#000",
+                                                fontSize: 10,
+                                            }}
+                                        >
+                                            {users[jid]?.chats[item]?.nonRead || 0} new messages
+                                        </Text>
                                     </ContactItem>
                                 )
                             }}
