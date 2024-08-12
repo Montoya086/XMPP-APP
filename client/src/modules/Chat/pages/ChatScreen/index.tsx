@@ -22,6 +22,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAddContactOpen, setIsAddContactOpen] = useState(false);
     const [isChangeStatusOpen, setIsChangeStatusOpen] = useState(false);
+    const [isServiceConnected, setIsServiceConnected] = useState(false);
     const [myStatus, setMyStatus] = useState<"online" | "away" | "xa" | "dnd" | "offline">("offline");
     const { messageValues, contactValues } = useChat({
         onContactSubmit: () => {
@@ -70,27 +71,46 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         console.log(JSON.stringify(users, null, 2));
     }, [users]); */
 
+    // Connect to XMPP
     useEffect(() => {
         const execute = async () => {
             if(xmppService.getXMPP() === null) {
+                setIsServiceConnected(false);
                 await handleConnect();
                 xmppService.updatePresence("online");
+                setIsServiceConnected(true);
+            } else {
+                setIsServiceConnected(true);
             }
-
-            xmppService.removeStanzaListener();
 
             const res = await xmppService.getContacts();
 
             res.contacts.map((contact) => {
                 dispatch(addChat({user: jid, with: contact.name}));
             });
+        }
+
+        if (jid) {
+            execute();
+        }
+        return () => {
+            setIsServiceConnected(false);
+            xmppService.disconnect();
+        }
+    }, [jid]);
+
+    // Listen for messages
+    useEffect(() => {
+        if (isServiceConnected && xmppService.getXMPP() !== null) {
+            xmppService.removeStanzaListener();
 
             xmppService.listenForMessages((from, message, type, room) => {
                 console.log(from, message, type);
-                if (type !== "single") {
+                if (type === "single") {
                     const parsedFrom = from.split("@")[0];
                     dispatch(addMessage({user: jid, with: parsedFrom, message: {message, from: parsedFrom, uid: uuid.v4().toString()}}));
                     handleNotification(parsedFrom);
+
                 } else {
                     if (room){
 
@@ -107,19 +127,14 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 dispatch(changeStatus({user: jid, with: from.split("@")[0], status}));
             });
         }
+    }, [currentChat, isServiceConnected]);
 
-        if (jid) {
-            execute();
-        }
-        return () => {
-            xmppService.disconnect();
-        }
-    }, [jid]);
-
+    // Scroll to bottom when new message is added
     useEffect(() => {
         scrollToBottom();
     }, [users[jid]?.chats[currentChat]?.messages]);
 
+    // Scroll to bottom when keyboard
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
           'keyboardDidShow',
