@@ -52,7 +52,6 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
             username: jid,
             password: password
         })
-        dispatch(setLoading(false))
     }
 
     const handleNotification = (from: string) => {
@@ -67,27 +66,42 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         }
     }
 
-    /* useEffect(() => {
-        console.log(JSON.stringify(users, null, 2));
-    }, [users]); */
+    useEffect(() => {
+        console.log("DATABASE", JSON.stringify(users, null, 2));
+    }, [users]);
+
+    const handleGetContacts = async () => {
+        const res = await xmppService.getContacts();
+        console.log("RES", res);
+
+        res.contacts.map((contact) => {
+            dispatch(addChat({user: jid, with: contact.jid.split("@")[0]}));
+        })
+
+        
+    }
 
     // Connect to XMPP
     useEffect(() => {
+        console.log("USE EFFECT", jid);
         const execute = async () => {
+            console.log("EXECUTE", jid);
             if(xmppService.getXMPP() === null) {
+                console.log("XMPP NOT CONNECTED, CONNECTING");
                 setIsServiceConnected(false);
                 await handleConnect();
-                xmppService.updatePresence("online");
-                setIsServiceConnected(true);
+                console.log("XMPP CONNECTED");
             } else {
-                setIsServiceConnected(true);
+                console.log("XMPP ALREADY CONNECTED");
             }
+            xmppService.updatePresence("online");
 
-            const res = await xmppService.getContacts();
-
-            res.contacts.map((contact) => {
-                dispatch(addChat({user: jid, with: contact.name}));
-            });
+            setTimeout(async () => {
+                await handleGetContacts();
+                xmppService.unblockPresence(jid);
+                dispatch(setLoading(false))
+                setIsServiceConnected(true);
+            }, 2000);
         }
 
         if (jid) {
@@ -170,6 +184,19 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             width={30}
                             height={30}
                         />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={handleGetContacts}   
+                    >
+                        <Text
+                            style={{
+                                fontSize: 20,
+                                fontWeight: "bold",
+                                color: "#fff"
+                            }}
+                        >
+                            GetContacts
+                        </Text>
                     </TouchableOpacity>
                     <Text
                         style={{

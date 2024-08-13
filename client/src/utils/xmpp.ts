@@ -50,6 +50,16 @@ class XMPPService {
     }
   }
 
+  listenForConnectionOpen(callback: () => void): void {
+    if (this.xmpp) {
+      this.xmpp.on('online', () => {
+        callback();
+      });
+    } else {
+      console.error('XMPP client is not connected');
+    }
+  }
+
   removeStanzaListener(): void {
     if (this.xmpp) {
       this.xmpp.removeAllListeners('stanza');
@@ -108,6 +118,7 @@ class XMPPService {
   listenForPresenceUpdates(callback: (status: "online" | "away" | "xa" | "dnd" | "offline", from: string) => void): void {
     if (this.xmpp) {
       this.xmpp.on('stanza', (stanza: any) => {
+        console.log('📥 Received stanza:', stanza.toString());
         if (stanza.is('presence')) {
           const from = stanza.attrs.from;
           const type = stanza.attrs.type;
@@ -178,21 +189,25 @@ class XMPPService {
     contacts: { jid: string; name: string; subscription: string }[];
   }> {
     if (this.xmpp) {
-      const iq = xml('iq', { type: 'get', id: 'roster1' },
-        xml('query', { xmlns: 'jabber:iq:roster' })
+    
+      const rosterRequest = xml(
+        "iq",
+        { type: "get", id: "get_roster" },
+        xml("query", { xmlns: "jabber:iq:roster" })
       );
+      const response = await this.xmpp.sendReceive(rosterRequest);
+      console.log(`📥 Received roster response: ${response.toString()}`);
 
-      const stanza = await this.xmpp.sendReceive(iq);
-      const query = stanza.getChild('query', 'jabber:iq:roster');
+      const query = response.getChild('query');
       if (query) {
-        const items = query.getChildren('item');
-        const contacts = items.map(item => ({
+        const contacts = query.getChildren('item').map((item: any) => ({
           jid: item.attrs.jid,
-          name: item.attrs.name || '',
+          name: item.attrs.name,
           subscription: item.attrs.subscription,
         }));
         return { contacts };
       }
+
       return { contacts: [] };
     } else {
       
@@ -231,6 +246,19 @@ class XMPPService {
   
       await this.xmpp.send(presence);
       console.log(`🔄 Status updated to: ${status}`);
+    } else {
+      console.error('XMPP client is not connected');
+    }
+  }
+
+  async unblockPresence(from: string): Promise<void> {
+    if (this.xmpp) {
+      const presence = xml(
+        'presence',
+        { type: 'subscribed', to: from }
+      );
+      await this.xmpp.send(presence);
+      console.log(`✅ Unblocked presence from: ${from}`);
     } else {
       console.error('XMPP client is not connected');
     }

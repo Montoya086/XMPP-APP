@@ -22,7 +22,7 @@ export const useLogin = () => {
             serverName: "",
         },
         validationSchema,
-        onSubmit: values => {
+        onSubmit: async values => {
             dispatch(setLoading(true));
             const credentials = {
                 service: values.serverUrl,
@@ -33,7 +33,7 @@ export const useLogin = () => {
             };
             let error = false;
             try{
-                xmppService.connect(credentials); 
+                await xmppService.connect(credentials); 
             } catch(e){
                 console.error(e);
                 error = true;
