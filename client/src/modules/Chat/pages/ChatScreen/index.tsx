@@ -5,16 +5,19 @@ import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
 import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead, addMessageGroup } from "@store/";
-import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
+import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, FileButton, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
 import Off from "../../../../assets/icons/off.svg";
 import Plus from "../../../../assets/icons/plus.svg";
 import Logo from "../../../../assets/icons/logo.svg";
+import Clip from "../../../../assets/icons/clip.svg";
 import { useChat } from "./useChat";
 import uuid from 'react-native-uuid';
 import ReactNativeModal from "react-native-modal";
 import Toast from "react-native-toast-message";
+import { launchImageLibrary } from "react-native-image-picker";
+import RNFS from 'react-native-fs';
 
 const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const dispatch = useDispatch();
@@ -185,6 +188,27 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         dispatch(changeAppState({appNavigationState: 'NOT_LOGGED_IN'}));
     }
 
+    const handleSelectImage = ()=>{
+        launchImageLibrary({mediaType: 'photo'}, async (response) => {
+            if (response.didCancel) {
+                console.log('Cancel image selection');
+            } else if (response.errorCode) {
+                console.error('Error on image selection:', response.errorMessage);
+            } else if (response.assets && response.assets.length > 0) {
+                const asset = response.assets[0];
+                const imageUri = asset.uri;
+                if (imageUri){
+                    const imageBase64 = await RNFS.readFile(imageUri, 'base64');
+                    xmppService.sendImage(currentChat+"@"+hostName, {
+                        name: asset.fileName || 'image.jpg',
+                        type: asset.type || 'image/jpeg',
+                        base64: imageBase64,
+                    })
+                }
+            }
+        })
+    }
+
     return (
         <AppBackground isSafe>
             {/* Chat Screen */}
@@ -277,6 +301,14 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 </ChatWrapper>
                 {currentChat && (
                     <InputContainer>
+                        <FileButton
+                            onPress={handleSelectImage}
+                        >
+                            <Clip
+                                width={30}
+                                height={30}
+                            />
+                        </FileButton>
                         <InputWrapper>
                             <CustomTextInput
                                 textInputProps={{

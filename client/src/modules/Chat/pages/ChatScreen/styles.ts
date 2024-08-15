@@ -38,6 +38,14 @@ export const SendButton = styled.TouchableOpacity(({ theme }) => ({
     alignItems: 'center',
 }))
 
+export const FileButton = styled.TouchableOpacity(({ theme }) => ({
+    backgroundColor: theme.colors.primary,
+    padding: theme.sizes.xs,
+    borderRadius: theme.sizes.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+}))
+
 export const InputWrapper = styled.View(({ theme }) => ({
     flex: 1,
 }))

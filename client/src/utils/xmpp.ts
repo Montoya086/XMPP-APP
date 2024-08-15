@@ -9,6 +9,12 @@ interface XMPPConfig {
   password: string;
 }
 
+interface Image {
+  type: string,
+  name: string,
+  base64: string,
+}
+
 class XMPPService {
   private xmpp: Client | null = null;
 
@@ -26,7 +32,7 @@ class XMPPService {
           console.log('🛈', status);
         });
 
-        debug(this.xmpp, true);
+        //debug(this.xmpp, true);
 
         this.xmpp.on('online', async (address: any) => {
           console.log('✅', 'Connected as', address.toString());
@@ -273,6 +279,27 @@ class XMPPService {
       );
       await this.xmpp.send(presence);
       console.log(`✅ Unblocked presence from: ${from}`);
+    } else {
+      console.error('XMPP client is not connected');
+    }
+  }
+
+  async sendImage(to: string, image:Image){
+    if (this.xmpp){
+      const { type, name, base64 } = image;
+      const message = xml(
+        'message',
+        { type: 'chat', to },
+        xml('body', {}, `Image: ${name}`),
+        xml('img', { xmlns: 'urn:xmpp:bob', type, src: `data:${type};base64,${base64}` })
+      );
+    
+      try {
+        await this.xmpp.send(message);
+        console.log('✅ Image Sent');
+      } catch (error) {
+        console.error('Error sending image:', error);
+      }
     } else {
       console.error('XMPP client is not connected');
     }
