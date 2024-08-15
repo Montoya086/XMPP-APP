@@ -1,10 +1,10 @@
-import { AppBackground, Button, CustomTextInput } from "@components/";
+import { AppBackground, Button, CustomTextInput, SwitchButton } from "@components/";
 import { FC, useEffect, useRef, useState } from "react";
 import { FlatList, Keyboard, Text, TouchableOpacity, View } from "react-native";
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
-import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead } from "@store/";
+import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead, addMessageGroup } from "@store/";
 import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
@@ -81,6 +81,20 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         
     }
 
+    /* const handleGroupMessage = async (room: string, message?: string) => {
+        const name = await xmppService.getGroupName(room)
+        if (message){
+            dispatch(addMessageGroup({
+                user: jid,
+                name: name || '',
+                with: room,
+                message: {
+                    from
+                }
+            }))
+        }
+    }
+ */
     // Connect to XMPP
     useEffect(() => {
         console.log("USE EFFECT", jid);
@@ -127,10 +141,10 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
 
                 } else {
                     if (room){
-
+                        //handleGroupMessage(from, message)
                     }
                 }
-                
+                xmppService.unblockPresence(from);
             });
 
             xmppService.listenForPresenceUpdates((status, from) => {
@@ -139,6 +153,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                     return;
                 }
                 dispatch(changeStatus({user: jid, with: from.split("@")[0], status}));
+                xmppService.unblockPresence(from);
             });
         }
     }, [currentChat, isServiceConnected]);
@@ -371,6 +386,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             </AddButton>
                         </SectionTitleContainer>
                         <FlatList
+                            scrollEnabled
                             data={Object.keys(users[jid]?.chats)}
                             renderItem={({item}) => {
                                 return (
@@ -501,6 +517,11 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 animationOut="slideOutDown"
             >
                 <AddContactModalContainer>
+                    <SwitchButton
+                        text1="Status"
+                        text2="Notifications"
+                        onPress={()=>{}}
+                    />
                     <StatusCard
                         onPress={() => {
                             xmppService.updatePresence("online");

@@ -55,6 +55,9 @@ export const databaseSlice = createSlice({
       state.users[action.payload].chats = {};
     },
     changeStatus: (state, action: PayloadAction<{ user: string; with: string; status: "online" | "away" | "xa" | "dnd" | "offline" }>) => {
+      if (!state.users[action.payload.user].chats[action.payload.with]){
+        state.users[action.payload.user].chats[action.payload.with] = { with: action.payload.with, messages: [], status: "offline", nonRead: 0 };
+      }
       state.users[action.payload.user].chats[action.payload.with].status = action.payload.status;
     },
     incrementNonRead: (state, action: PayloadAction<{ user: string; with: string }>) => {

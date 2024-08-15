@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { loadingSlice } from "../slices/Loading-slice";
 import { chatSlice, userSlice } from "../slices";
 import { databaseSlice } from "../slices/Database-slice";
+import { GroupsDatabaseSlice } from "../slices/GroupsDatabase-slice";
 
 const appPersistConfig = {
   key: "appState",
@@ -31,16 +32,23 @@ const databasePersistConfig = {
   storage: AsyncStorage
 }
 
+const groupDatabasePersistConfig = {
+  key: "groupDatabase",
+  storage: AsyncStorage
+}
+
 AppStateListener();
 
 type AppState = ReturnType<typeof appStateSlice.reducer>;
 type UserState = ReturnType<typeof userSlice.reducer>;
 type DatabaseState = ReturnType<typeof databaseSlice.reducer>;
+type GroupDatabaseState = ReturnType<typeof GroupsDatabaseSlice.reducer>
 
 const rootReducer = combineReducers({
   appState: persistReducer<AppState>(appPersistConfig, appStateSlice.reducer),
   user: persistReducer<UserState>(userPersistConfig, userSlice.reducer),
   database: persistReducer<DatabaseState>(databasePersistConfig, databaseSlice.reducer),
+  groupDatabase: persistReducer<GroupDatabaseState>(groupDatabasePersistConfig, GroupsDatabaseSlice.reducer),
   loading: loadingSlice.reducer,
   userSlice: userSlice.reducer,
   chatSlice: chatSlice.reducer,

@@ -136,6 +136,20 @@ class XMPPService {
     }
   }
 
+  listenForSubscriptionRequests(callback: (from: string) => void): void {
+    if (this.xmpp) {
+      this.xmpp.on('stanza', (stanza: any) => {
+        if (stanza.is('presence') && stanza.attrs.type === 'subscribe') {
+          const from = stanza.attrs.from;
+          console.log(`📬 Solicitud de suscripción de: ${from}`);
+          callback(from);
+        }
+      });
+    } else {
+      console.error('XMPP client is not connected');
+    }
+  }
+
   registerUser = async (jid: string, password: string) => {
     if (this.xmpp) {
       const iq = xml(
@@ -261,6 +275,36 @@ class XMPPService {
       console.log(`✅ Unblocked presence from: ${from}`);
     } else {
       console.error('XMPP client is not connected');
+    }
+  }
+
+  async getGroupName(groupJid: string): Promise<string | null> {
+    if (this.xmpp) {
+      const discoInfoRequest = xml(
+        'iq',
+        { type: 'get', to: groupJid, id: 'disco1' },
+        xml('query', { xmlns: 'http://jabber.org/protocol/disco#info' })
+      );
+  
+      try {
+        const response = await this.xmpp.sendReceive(discoInfoRequest);
+        console.log(`📥 Received disco#info response: ${response.toString()}`);
+  
+        const identity = response.getChild('query')?.getChild('identity');
+        if (identity) {
+          const name = identity.attrs.name || null;
+          return name;
+        } else {
+          console.warn('⚠️ No identity found in disco#info response');
+          return null;
+        }
+      } catch (error) {
+        console.error('Error retrieving group name:', error);
+        return null;
+      }
+    } else {
+      console.error('XMPP client is not connected');
+      return null;
     }
   }
 

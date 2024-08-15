@@ -2,7 +2,8 @@ import * as yup from 'yup';
 import { useFormik } from 'formik';
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from 'react-redux';
-import { changeAppState, registerUser, setLoading, setUser } from '@store/';
+import { changeAppState, registerUser, registerUserGroup, setLoading, setUser } from '@store/';
+import Toast from 'react-native-toast-message';
 
 export const useLogin = () => {
     const validationSchema = yup.object().shape({
@@ -31,25 +32,30 @@ export const useLogin = () => {
                 username: values.jid,
                 password: values.password,
             };
-            let error = false;
             try{
                 await xmppService.connect(credentials); 
-            } catch(e){
-                console.error(e);
-                error = true;
-            }
-             
-            if(!error){
                 dispatch(setUser({
                     jid: values.jid,
                     hostUrl: values.serverUrl,
                     hostName: values.serverName,
                     password: values.password
                 }));
-                dispatch(changeAppState({appNavigationState: 'LOGGED_IN'}));
                 dispatch(registerUser(values.jid));
+                dispatch(registerUserGroup(values.jid))
+                setTimeout(()=>{
+                    dispatch(changeAppState({appNavigationState: 'LOGGED_IN'}));
+                },1000)
+            } catch(e:any){
+                xmppService.disconnect()
+                console.error(e);
+                Toast.show({
+                    "type": "error",
+                    "text1": e.message
+                })
+            } finally {
+                dispatch(setLoading(false));
             }
-            dispatch(setLoading(false));
+            
         },
     });
     
