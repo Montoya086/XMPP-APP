@@ -9,7 +9,7 @@ interface XMPPConfig {
   password: string;
 }
 
-interface Image {
+interface File {
   type: string,
   name: string,
   base64: string,
@@ -156,6 +156,38 @@ class XMPPService {
     }
   }
 
+  listenForFileMessages(callback: (from: string, message: string) => void): void {
+    if (this.xmpp) {
+      this.xmpp.on('stanza', (stanza: any) => {
+        if (stanza.is('message') && stanza.getChild('x', 'jabber:x:oob')) {
+          const urlElement = stanza.getChild('x', 'jabber:x:oob').getChild('url');
+          const descElement = stanza.getChild('x', 'jabber:x:oob').getChild('desc');
+          const from = stanza.attrs.from;
+          
+          if (urlElement && descElement) {
+            const base64Data = urlElement.text().split(',')[1]; // Elimina el prefijo "data:<mime_type>;base64,"
+            const fileName = descElement.text();
+
+            const message= "file://"+base64Data+"//"+fileName
+            
+            try {
+              callback(
+                from,
+                message
+              )
+              
+              console.log(`📥 File received and saved: ${fileName}`);
+            } catch (error) {
+              console.error('Error processing received file:', error);
+            }
+          }
+        }
+      })
+    } else {
+      console.error('XMPP client is not connected');
+    }
+  }
+
   registerUser = async (jid: string, password: string) => {
     if (this.xmpp) {
       const iq = xml(
@@ -284,24 +316,31 @@ class XMPPService {
     }
   }
 
-  async sendImage(to: string, image:Image){
+  async sendFile(to: string, file:File){
     if (this.xmpp){
-      const { type, name, base64 } = image;
-      const message = xml(
-        'message',
-        { type: 'chat', to },
-        xml('body', {}, `Image: ${name}`),
-        xml('img', { xmlns: 'urn:xmpp:bob', type, src: `data:${type};base64,${base64}` })
-      );
-    
       try {
-        await this.xmpp.send(message);
-        console.log('✅ Image Sent');
+        console.log("File: ",file)
+        const { name, base64, type } = file;
+
+        const fileMessage = xml(
+          'message',
+          { type: 'chat', to },
+          xml('x', { xmlns: 'jabber:x:oob' },
+            xml('url', {}, `data:${type};base64,${base64}`),
+            xml('desc', {}, name)
+          )
+        );
+  
+        await this.xmpp.send(fileMessage);
+        console.log(`📤 File sent to ${to}: ${name}`);
+        return Promise.resolve()
       } catch (error) {
-        console.error('Error sending image:', error);
+        console.error('Error sending file:', error);
+        return Promise.reject()
       }
     } else {
       console.error('XMPP client is not connected');
+      return Promise.reject()
     }
   }
 

@@ -187,3 +187,14 @@ export const StatusCard = styled.TouchableOpacity(({ theme }) => ({
     flexDirection: 'row',
     gap: theme.sizes.xs,
 }))
+
+export const FileContainer = styled.TouchableOpacity(({ theme }) => ({
+    flexDirection: "row",
+    gap: theme.sizes.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.background0,
+    borderRadius: theme.sizes.xxs,
+    padding: theme.sizes.xs,
+    justifyContent: "center",
+    alignItems: "center"
+}))

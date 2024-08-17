@@ -1,11 +1,11 @@
 import { AppBackground, Button, CustomTextInput, SwitchButton } from "@components/";
 import { FC, useEffect, useRef, useState } from "react";
-import { FlatList, Keyboard, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Keyboard, Linking, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
 import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead, addMessageGroup } from "@store/";
-import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, FileButton, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
+import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, FileButton, FileContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
 import Off from "../../../../assets/icons/off.svg";
@@ -16,8 +16,9 @@ import { useChat } from "./useChat";
 import uuid from 'react-native-uuid';
 import ReactNativeModal from "react-native-modal";
 import Toast from "react-native-toast-message";
-import { launchImageLibrary } from "react-native-image-picker";
+import DocumentPicker from 'react-native-document-picker';
 import RNFS from 'react-native-fs';
+import { Buffer } from 'buffer';
 
 const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const dispatch = useDispatch();
@@ -26,6 +27,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const [isAddContactOpen, setIsAddContactOpen] = useState(false);
     const [isChangeStatusOpen, setIsChangeStatusOpen] = useState(false);
     const [isServiceConnected, setIsServiceConnected] = useState(false);
+    const [fileContent, setFileContent] = useState("")
     const [myStatus, setMyStatus] = useState<"online" | "away" | "xa" | "dnd" | "offline">("offline");
     const { messageValues, contactValues } = useChat({
         onContactSubmit: () => {
@@ -158,6 +160,14 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 dispatch(changeStatus({user: jid, with: from.split("@")[0], status}));
                 xmppService.unblockPresence(from);
             });
+
+            xmppService.listenForFileMessages((from, message) => {
+                console.log(from, message);
+                const parsedFrom = from.split("@")[0];
+                dispatch(addMessage({user: jid, with: parsedFrom, message: {message, from: parsedFrom, uid: uuid.v4().toString()}}));
+                handleNotification(parsedFrom);
+                xmppService.unblockPresence(from);
+            });
         }
     }, [currentChat, isServiceConnected]);
 
@@ -188,25 +198,49 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         dispatch(changeAppState({appNavigationState: 'NOT_LOGGED_IN'}));
     }
 
-    const handleSelectImage = ()=>{
-        launchImageLibrary({mediaType: 'photo'}, async (response) => {
-            if (response.didCancel) {
-                console.log('Cancel image selection');
-            } else if (response.errorCode) {
-                console.error('Error on image selection:', response.errorMessage);
-            } else if (response.assets && response.assets.length > 0) {
-                const asset = response.assets[0];
-                const imageUri = asset.uri;
-                if (imageUri){
-                    const imageBase64 = await RNFS.readFile(imageUri, 'base64');
-                    xmppService.sendImage(currentChat+"@"+hostName, {
-                        name: asset.fileName || 'image.jpg',
-                        type: asset.type || 'image/jpeg',
-                        base64: imageBase64,
-                    })
-                }
+    const handleSelectFile = async () => {
+
+        const res = await DocumentPicker.pick({
+            type: [DocumentPicker.types.allFiles],
+        });
+        const file = res[0]
+        if (file){
+            console.log("File:", file)
+            const fileBase64 = await RNFS.readFile(file.uri, 'base64');
+            console.log('Selected file:', fileBase64);
+            try {
+                await xmppService.sendFile(currentChat+"@"+hostName, {
+                    name: file.name || "",
+                    type: file.type || "",
+                    base64: fileBase64,
+                })
+                dispatch(addMessage({ 
+                    user: jid, 
+                    with:currentChat, 
+                    message: { 
+                        message: "file://"+fileBase64+"//"+file.name, 
+                        from: jid, 
+                        uid: uuid.v4().toString() 
+                    } 
+                }));
+            } catch {
+                Toast.show({
+                    type: "error",
+                    text1: "Error sending file",
+                })
             }
-        })
+        }
+    }
+
+    async function openDocument(contentUri: string) {
+        try {
+            const base64 = contentUri.replace("file://", "").split("//")[0]
+            const decodedText = Buffer.from(base64, 'base64').toString('utf-8');
+            console.log("TEXT", decodedText)
+            setFileContent(decodedText)
+        } catch (err) {
+            console.error('Error reading file from URI:', err);
+        }
     }
 
     return (
@@ -261,21 +295,50 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                                     scrollToBottom();
                                                 }}
                                             >
-                                                <Text
-                                                    style={{
-                                                        color: "#fff",
-                                                        fontWeight: "bold"
-                                                    }}
-                                                >
-                                                    {item.from}
-                                                </Text>
-                                                <Text
-                                                    style={{
-                                                        color: "#fff"
-                                                    }}
-                                                >
-                                                    {item.message}
-                                                </Text>
+                                                {item.message.startsWith('file://') ? (
+                                                    <>
+                                                        <Text
+                                                            style={{
+                                                                color: "#fff",
+                                                                fontWeight: "bold"
+                                                            }}
+                                                        >
+                                                            {item.from}
+                                                        </Text>
+                                                        <FileContainer
+                                                            onPress={()=>{
+                                                                openDocument(item.message)
+                                                            }}
+                                                        >
+                                                            <Clip/>
+                                                            <Text
+                                                                style={{
+                                                                    color: "#fff"
+                                                                }}
+                                                            >
+                                                                Open: {item.message.replace("file://", "").split("//")[1]}
+                                                            </Text>
+                                                        </FileContainer>
+                                                    </>
+                                                ): (
+                                                    <>
+                                                        <Text
+                                                            style={{
+                                                                color: "#fff",
+                                                                fontWeight: "bold"
+                                                            }}
+                                                        >
+                                                            {item.from}
+                                                        </Text>
+                                                        <Text
+                                                            style={{
+                                                                color: "#fff"
+                                                            }}
+                                                        >
+                                                            {item.message}
+                                                        </Text>
+                                                    </>
+                                                )}
                                             </ChatBubble>
                                         )
                                     }}
@@ -302,7 +365,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 {currentChat && (
                     <InputContainer>
                         <FileButton
-                            onPress={handleSelectImage}
+                            onPress={handleSelectFile}
                         >
                             <Clip
                                 width={30}
@@ -606,6 +669,37 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             status="dnd"
                         />
                     </StatusCard>
+                </AddContactModalContainer>
+            </ReactNativeModal>
+            {/* File content */}
+            <ReactNativeModal
+                isVisible={!!fileContent}
+                onBackdropPress={() => {
+                    setFileContent("")
+                }}
+                onBackButtonPress={() => {
+                    setFileContent("")
+                }}
+
+                style={{
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    margin: 0,
+                    flexDirection: 'row',
+                }}
+
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+            >
+                <AddContactModalContainer>
+                    <TextInput
+                        style={{
+                            width: "100%"
+                        }}
+                        multiline
+                        accessible={false}
+                        value={fileContent}
+                    />
                 </AddContactModalContainer>
             </ReactNativeModal>
         </AppBackground>
