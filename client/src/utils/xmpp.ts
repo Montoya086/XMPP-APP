@@ -319,12 +319,19 @@ class XMPPService {
     }
   }
 
-  async unblockPresence(from: string): Promise<void> {
+  async unblockPresence(from: string, flag?: boolean): Promise<void> {
     if (this.xmpp) {
       const presence = xml(
         'presence',
         { type: 'subscribed', to: from }
       );
+      const subscribe = xml(
+        'presence',
+        { type: 'subscribe', to: from }
+      )
+      if (!flag){
+        await this.xmpp.send(subscribe)
+      }
       await this.xmpp.send(presence);
       console.log(`✅ Unblocked presence from: ${from}`);
     } else {
@@ -393,10 +400,7 @@ class XMPPService {
   async acceptGroupChatInvitation(roomJid: string, nickname: string): Promise<void> {
     if (this.xmpp) {
       try {
-        // Construir el JID completo para unirse a la sala con un nickname
         const fullRoomJid = `${roomJid}/${nickname}`;
-  
-        // Enviar presencia para unirse a la sala
         const presence = xml(
           'presence',
           { to: fullRoomJid },
@@ -407,6 +411,32 @@ class XMPPService {
         console.log(`✅ Joined group chat: ${roomJid} as ${nickname}`);
       } catch (error) {
         console.error('Error accepting group chat invitation:', error);
+      }
+    } else {
+      console.error('XMPP client is not connected');
+    }
+  }
+
+  async deleteAccount(): Promise<void> {
+    if (this.xmpp) {
+      try {
+        const iq = xml(
+          'iq',
+          { type: 'set', id: 'unregister1' },
+          xml(
+            'query',
+            { xmlns: 'jabber:iq:register' },
+            xml('remove')
+          )
+        );
+  
+        const response = await this.xmpp.sendReceive(iq);
+        console.log('✅ Account deletion response:', response.toString());
+  
+        this.disconnect();
+        console.log('🚫 Account has been deleted and disconnected.');
+      } catch (error) {
+        console.error('Error deleting account:', error);
       }
     } else {
       console.error('XMPP client is not connected');

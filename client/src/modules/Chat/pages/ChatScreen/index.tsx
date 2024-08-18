@@ -4,7 +4,7 @@ import { FlatList, Keyboard, Linking, Text, TextInput, TouchableOpacity, View } 
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
-import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead, addMessageGroup, addNotification, removeNotification, GroupMessage, addChatGroup, registerUserGroup, resetNonReadGroup, incrementNonReadGroup } from "@store/";
+import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead, addMessageGroup, addNotification, removeNotification, GroupMessage, addChatGroup, registerUserGroup, resetNonReadGroup, incrementNonReadGroup, deleteNotificationAccount, deleteDatabaseAccount } from "@store/";
 import { AcceptButton, AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, FileButton, FileContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, NotificationButtonsContainer, NotificationContainer, NotificationTextContainer, RejectButton, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
@@ -110,7 +110,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
             setTimeout(async () => {
                 dispatch(registerUserGroup(jid))
                 await handleGetContacts();
-                xmppService.unblockPresence(jid);
+                xmppService.unblockPresence(jid, true);
                 dispatch(setLoading(false))
                 setIsServiceConnected(true);
             }, 2000);
@@ -297,6 +297,12 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 text1: "Error accepting groupchat"
             })
         }
+    }
+
+    const handleDeleteAccount = () =>{
+        dispatch(deleteNotificationAccount(jid))
+        dispatch(deleteDatabaseAccount(jid))
+        handleLogout()
     }
 
     return (
@@ -528,55 +534,57 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                 />
                             </AddButton>
                         </SectionTitleContainer>
-                        <FlatList
-                            scrollEnabled
-                            data={Object.keys(users[jid]?.chats)}
-                            renderItem={({item}) => {
-                                return (
-                                    
-                                    <ContactItem
-                                        onPress={() => {
-                                            dispatch(setCurrentChat({jid: item}));
-                                            dispatch(resetNonRead({user: jid, with: item}));
-                                            setIsMenuOpen(false);
-                                        }}
-                                        isSelected={currentChat === item}
-                                    >
-                                        <ContactItemNameStatus>
+                        {!!users[jid]?.chats && (
+                            <FlatList
+                                scrollEnabled
+                                data={Object.keys(users[jid]?.chats)}
+                                renderItem={({item}) => {
+                                    return (
+                                        
+                                        <ContactItem
+                                            onPress={() => {
+                                                dispatch(setCurrentChat({jid: item}));
+                                                dispatch(resetNonRead({user: jid, with: item}));
+                                                setIsMenuOpen(false);
+                                            }}
+                                            isSelected={currentChat === item}
+                                        >
+                                            <ContactItemNameStatus>
+                                                <Text
+                                                    style={{
+                                                        color: "#000",
+                                                        fontSize: 18,
+                                                    }}
+                                                >
+                                                    {item}
+                                                </Text>
+                                                <StatusBall
+                                                    status={users[jid]?.chats[item]?.status || "offline"}
+                                                />
+                                            </ContactItemNameStatus>
                                             <Text
                                                 style={{
                                                     color: "#000",
-                                                    fontSize: 18,
+                                                    fontSize: 10,
                                                 }}
                                             >
-                                                {item}
+                                                {users[jid]?.chats[item]?.nonRead || 0} new messages
                                             </Text>
-                                            <StatusBall
-                                                status={users[jid]?.chats[item]?.status || "offline"}
-                                            />
-                                        </ContactItemNameStatus>
-                                        <Text
+                                        </ContactItem>
+                                    )
+                                }}
+                                keyExtractor={(item) => item}
+                                ItemSeparatorComponent={() => {
+                                    return (
+                                        <View
                                             style={{
-                                                color: "#000",
-                                                fontSize: 10,
+                                                height: 5,
                                             }}
-                                        >
-                                            {users[jid]?.chats[item]?.nonRead || 0} new messages
-                                        </Text>
-                                    </ContactItem>
-                                )
-                            }}
-                            keyExtractor={(item) => item}
-                            ItemSeparatorComponent={() => {
-                                return (
-                                    <View
-                                        style={{
-                                            height: 5,
-                                        }}
-                                    />
-                                )
-                            }}
-                        />
+                                        />
+                                    )
+                                }}
+                            />
+                        )}
                     </ContactsContainer>
                     <ContactsContainer>
                         <SectionTitleContainer>
@@ -640,9 +648,10 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                         )}
                     </ContactsContainer>
                     <Button
-                        text = "Clear Chats"
+                        text = "Delete account"
                         onPress={() => {
-                            dispatch(clearChats(jid));
+                            xmppService.deleteAccount()
+                            handleDeleteAccount()
                         }}
                     />
                 </MenuContainer>

@@ -45,7 +45,10 @@ export const notificationsSlice = createSlice({
     }>) {
         state.content[action.payload.jid].splice(action.payload.index, 1)
     },
+    deleteNotificationAccount: (state, action: PayloadAction<string>) => {
+        delete state.content[action.payload]
+      },
   },
 });
 
-export const { addNotification, removeNotification } = notificationsSlice.actions;
+export const { addNotification, removeNotification, deleteNotificationAccount } = notificationsSlice.actions;

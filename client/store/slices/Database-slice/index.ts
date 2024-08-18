@@ -65,8 +65,11 @@ export const databaseSlice = createSlice({
     },
     resetNonRead: (state, action: PayloadAction<{ user: string; with: string }>) => {
       state.users[action.payload.user].chats[action.payload.with].nonRead = 0;
-    }
+    },
+    deleteDatabaseAccount: (state, action: PayloadAction<string>) => {
+      delete state.users[action.payload]
+    },
   },
 });
 
-export const { registerUser, addMessage, clearChats, addChat, changeStatus, incrementNonRead, resetNonRead } = databaseSlice.actions;
+export const { registerUser, addMessage, clearChats, addChat, changeStatus, incrementNonRead, resetNonRead, deleteDatabaseAccount } = databaseSlice.actions;
