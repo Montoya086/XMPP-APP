@@ -804,7 +804,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                         <>
                             <StatusCard
                                 onPress={() => {
-                                    xmppService.updatePresence("online");
+                                    xmppService.updatePresence("online", myStatusMessage);
                                     setIsChangeStatusOpen(false);
                                 }}
                             >
@@ -817,7 +817,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             </StatusCard>
                             <StatusCard
                                 onPress={() => {
-                                    xmppService.updatePresence("away");
+                                    xmppService.updatePresence("away", myStatusMessage);
                                     setIsChangeStatusOpen(false);
                                 }}
                             >
@@ -830,7 +830,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             </StatusCard>
                             <StatusCard
                                 onPress={() => {
-                                    xmppService.updatePresence("xa");
+                                    xmppService.updatePresence("xa", myStatusMessage);
                                     setIsChangeStatusOpen(false);
                                 }}
                             >
@@ -843,7 +843,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             </StatusCard>
                             <StatusCard
                                 onPress={() => {
-                                    xmppService.updatePresence("dnd");
+                                    xmppService.updatePresence("dnd", myStatusMessage);
                                     setIsChangeStatusOpen(false);
                                 }}
                             >
