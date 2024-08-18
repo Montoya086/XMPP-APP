@@ -4,8 +4,8 @@ import { FlatList, Keyboard, Linking, Text, TextInput, TouchableOpacity, View } 
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
-import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead, addMessageGroup } from "@store/";
-import { AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, FileButton, FileContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
+import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead, addMessageGroup, addNotification, removeNotification, GroupMessage, addChatGroup, registerUserGroup, resetNonReadGroup, incrementNonReadGroup } from "@store/";
+import { AcceptButton, AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, FileButton, FileContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, NotificationButtonsContainer, NotificationContainer, NotificationTextContainer, RejectButton, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
 import Off from "../../../../assets/icons/off.svg";
@@ -17,8 +17,9 @@ import uuid from 'react-native-uuid';
 import ReactNativeModal from "react-native-modal";
 import Toast from "react-native-toast-message";
 import DocumentPicker from 'react-native-document-picker';
-import RNFS from 'react-native-fs';
+import RNFS, { stat } from 'react-native-fs';
 import { Buffer } from 'buffer';
+import Autolink from 'react-native-autolink';
 
 const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const dispatch = useDispatch();
@@ -27,6 +28,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const [isAddContactOpen, setIsAddContactOpen] = useState(false);
     const [isChangeStatusOpen, setIsChangeStatusOpen] = useState(false);
     const [isServiceConnected, setIsServiceConnected] = useState(false);
+    const [statusSwitchState, setStatusSwitchState] = useState(false);
     const [fileContent, setFileContent] = useState("")
     const [myStatus, setMyStatus] = useState<"online" | "away" | "xa" | "dnd" | "offline">("offline");
     const { messageValues, contactValues } = useChat({
@@ -35,8 +37,12 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         }
     });
     const {users} = useAppSelector(state => state.database);
+    const { users:groupUsers } = useAppSelector(state => state.groupDatabase)
     const {isLoading} = useAppSelector(state => state.loading);
-    const { jid:currentChat, type: currentChatType } = useAppSelector(state => state.chatSlice);
+    const { jid:currentChat, type: currentChatType, name: currentChatName } = useAppSelector(state => state.chatSlice);
+    const {
+        content: notifications
+    } = useAppSelector(state => state.notificationsSlice) 
     const {
         hostName,
         hostUrl,
@@ -73,7 +79,8 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
 
     useEffect(() => {
         console.log("DATABASE", JSON.stringify(users, null, 2));
-    }, [users]);
+        console.log("GROUP DATABASE", JSON.stringify(groupUsers, null, 2))
+    }, [users, groupUsers]);
 
     const handleGetContacts = async () => {
         const res = await xmppService.getContacts();
@@ -85,21 +92,6 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
 
         
     }
-
-    /* const handleGroupMessage = async (room: string, message?: string) => {
-        const name = await xmppService.getGroupName(room)
-        if (message){
-            dispatch(addMessageGroup({
-                user: jid,
-                name: name || '',
-                with: room,
-                message: {
-                    from
-                }
-            }))
-        }
-    }
- */
     // Connect to XMPP
     useEffect(() => {
         console.log("USE EFFECT", jid);
@@ -116,6 +108,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
             xmppService.updatePresence("online");
 
             setTimeout(async () => {
+                dispatch(registerUserGroup(jid))
                 await handleGetContacts();
                 xmppService.unblockPresence(jid);
                 dispatch(setLoading(false))
@@ -132,27 +125,66 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         }
     }, [jid]);
 
+    const handleCreateNotification = async (from: string, roomJid: string) =>{
+        console.log("ROOMJID FROM NOTI: ", roomJid)
+        const groupName = await xmppService.getGroupName(roomJid)
+        if(groupName){
+            dispatch(addNotification({
+                from,
+                jid,
+                name: groupName,
+                roomJid: roomJid
+            }))
+            Toast.show({
+                type: "info",
+                text1: "New Notification",
+                text2: `You have a new notification`
+            });
+        }
+    }
+
+    const handleNewChatGroup = async (roomJid:string, chatGroupMessage:GroupMessage) => {
+        dispatch(addMessageGroup({
+            user: jid,
+            with: roomJid,
+            name: roomJid,
+            message: chatGroupMessage
+        }))
+        dispatch(incrementNonReadGroup({user: jid, with: roomJid}));
+    }
+
     // Listen for messages
     useEffect(() => {
         if (isServiceConnected && xmppService.getXMPP() !== null) {
             xmppService.removeStanzaListener();
 
             xmppService.listenForMessages((from, message, type, room) => {
-                console.log(from, message, type);
+                console.log("MESSAGE: ", from, message, type);
                 if (type === "single") {
                     const parsedFrom = from.split("@")[0];
                     dispatch(addMessage({user: jid, with: parsedFrom, message: {message, from: parsedFrom, uid: uuid.v4().toString()}}));
                     handleNotification(parsedFrom);
-
+                    xmppService.unblockPresence(from);
                 } else {
                     if (room){
-                        //handleGroupMessage(from, message)
+                        handleNewChatGroup(
+                            room,
+                            {
+                                from,
+                                message,
+                                uid: uuid.v4().toString()
+                            },
+                            
+                        )
                     }
                 }
-                xmppService.unblockPresence(from);
             });
 
             xmppService.listenForPresenceUpdates((status, from) => {
+                if (from.split("@")[1]?.split(".")[0] == "conference"){
+                    return
+                }
+
                 if (from.split("@")[0] === jid) {
                     setMyStatus(status);
                     return;
@@ -168,6 +200,10 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 handleNotification(parsedFrom);
                 xmppService.unblockPresence(from);
             });
+
+            xmppService.listenForGroupChatInvitations((from, roomJid)=>{
+                handleCreateNotification(from, roomJid)
+            })
         }
     }, [currentChat, isServiceConnected]);
 
@@ -243,6 +279,26 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         }
     }
 
+    const acceptGroupChatInvitation = async (groupJid: string, index: number, groupName: string) =>{
+        try{
+            dispatch(addChatGroup({
+                name: groupName,
+                user: jid,
+                with: groupJid
+            }))
+            await xmppService.acceptGroupChatInvitation(groupJid, jid)
+            dispatch(removeNotification({
+                jid,
+                index
+            }))
+        }catch{
+            Toast.show({
+                type: "error",
+                text1: "Error accepting groupchat"
+            })
+        }
+    }
+
     return (
         <AppBackground isSafe>
             {/* Chat Screen */}
@@ -258,26 +314,15 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             height={30}
                         />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={handleGetContacts}   
-                    >
-                        <Text
-                            style={{
-                                fontSize: 20,
-                                fontWeight: "bold",
-                                color: "#fff"
-                            }}
-                        >
-                            GetContacts
-                        </Text>
-                    </TouchableOpacity>
                     <Text
                         style={{
                             fontSize: 20,
                             fontWeight: "bold",
                             color: "#fff"
                         }}
-                    >Chat Screen</Text>
+                    >
+                        {currentChatName}
+                    </Text>
 
                 </HeaderContainer>
                 <ChatWrapper>
@@ -286,7 +331,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             {!isLoading && (
                                 <FlatList
                                     ref={flatlistRef}
-                                    data={users[jid]?.chats[currentChat]?.messages}
+                                    data={currentChatType == "single" ? users[jid]?.chats[currentChat]?.messages : groupUsers[jid]?.chats[currentChat]?.messages}
                                     renderItem={({item}) => {
                                         return (
                                             <ChatBubble
@@ -330,13 +375,16 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                                         >
                                                             {item.from}
                                                         </Text>
-                                                        <Text
-                                                            style={{
-                                                                color: "#fff"
+                                                        <Autolink
+                                                            text={item.message}
+                                                            onPress={(url) => Linking.openURL(url)}
+                                                            linkStyle={{ color: 'blue', textDecorationLine: 'underline' }}
+                                                            textProps={{
+                                                                style:{
+                                                                    color: "#fff"
+                                                                }
                                                             }}
-                                                        >
-                                                            {item.message}
-                                                        </Text>
+                                                        />
                                                     </>
                                                 )}
                                             </ChatBubble>
@@ -541,13 +589,55 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             >
                                 Groups
                             </Text>
-                            <AddButton>
-                                <Plus
-                                    width={15}
-                                    height={15}
-                                />
-                            </AddButton>
                         </SectionTitleContainer>
+                        {!!groupUsers[jid]?.chats && (
+                            <FlatList
+                                scrollEnabled
+                                data={Object.keys(groupUsers[jid]?.chats)}
+                                renderItem={({item}) => {
+                                    return (
+                                        
+                                        <ContactItem
+                                            onPress={() => {
+                                                dispatch(setCurrentChat({jid: item, type: "group", name: groupUsers[jid]?.chats[item].name}));
+                                                dispatch(resetNonReadGroup({user: jid, with: item}));
+                                                setIsMenuOpen(false);
+                                            }}
+                                            isSelected={currentChat === item}
+                                        >
+                                            <ContactItemNameStatus>
+                                                <Text
+                                                    style={{
+                                                        color: "#000",
+                                                        fontSize: 18,
+                                                    }}
+                                                >
+                                                    {groupUsers[jid]?.chats[item].name}
+                                                </Text>
+                                            </ContactItemNameStatus>
+                                            <Text
+                                                style={{
+                                                    color: "#000",
+                                                    fontSize: 10,
+                                                }}
+                                            >
+                                                {groupUsers[jid]?.chats[item]?.nonRead || 0} new messages
+                                            </Text>
+                                        </ContactItem>
+                                    )
+                                }}
+                                keyExtractor={(item) => item}
+                                ItemSeparatorComponent={() => {
+                                    return (
+                                        <View
+                                            style={{
+                                                height: 5,
+                                            }}
+                                        />
+                                    )
+                                }}
+                            />
+                        )}
                     </ContactsContainer>
                     <Button
                         text = "Clear Chats"
@@ -615,60 +705,121 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                     <SwitchButton
                         text1="Status"
                         text2="Notifications"
-                        onPress={()=>{}}
+                        current={statusSwitchState}
+                        onPress={()=>{
+                            setStatusSwitchState(!statusSwitchState)
+                        }}
                     />
-                    <StatusCard
-                        onPress={() => {
-                            xmppService.updatePresence("online");
-                            setIsChangeStatusOpen(false);
-                        }}
-                    >
-                        <Text>
-                            Online
-                        </Text>
-                        <StatusBall
-                            status="online"
-                        />
-                    </StatusCard>
-                    <StatusCard
-                        onPress={() => {
-                            xmppService.updatePresence("away");
-                            setIsChangeStatusOpen(false);
-                        }}
-                    >
-                        <Text>
-                            Away
-                        </Text>
-                        <StatusBall
-                            status="away"
-                        />
-                    </StatusCard>
-                    <StatusCard
-                        onPress={() => {
-                            xmppService.updatePresence("xa");
-                            setIsChangeStatusOpen(false);
-                        }}
-                    >
-                        <Text>
-                            Extended Away
-                        </Text>
-                        <StatusBall
-                            status="xa"
-                        />
-                    </StatusCard>
-                    <StatusCard
-                        onPress={() => {
-                            xmppService.updatePresence("dnd");
-                            setIsChangeStatusOpen(false);
-                        }}
-                    >
-                        <Text>
-                            Do Not Disturb
-                        </Text>
-                        <StatusBall
-                            status="dnd"
-                        />
-                    </StatusCard>
+                    {statusSwitchState ? (
+                        <>
+                            <FlatList
+                                data={notifications[jid]}
+                                renderItem={({item, index})=>{
+                                    return (
+                                        <NotificationContainer>
+                                            <NotificationTextContainer>
+                                                <Text
+                                                    style={{
+                                                        color: "#000"
+                                                    }}
+                                                >
+                                                    {item.from.split("@")[0]+" has invited you to "+"'"+item.name+"'"}
+                                                </Text>
+                                            </NotificationTextContainer>
+                                            <NotificationButtonsContainer>
+                                                <AcceptButton
+                                                    onPress={()=>{
+                                                        acceptGroupChatInvitation(item.roomJid, index, item.name)
+                                                    }}
+                                                >
+                                                    <Text
+                                                        style={{
+                                                            color: "#fff",
+                                                            fontWeight: "bold"
+                                                        }}
+                                                    >
+                                                        Accept
+                                                    </Text>
+                                                </AcceptButton>
+                                                <RejectButton
+                                                    onPress={()=>{
+                                                        dispatch(removeNotification({
+                                                            jid,
+                                                            index
+                                                        }))
+                                                    }}
+                                                >
+                                                    <Text
+                                                        style={{
+                                                            color: "#fff",
+                                                            fontWeight: "bold"
+                                                        }}
+                                                    >
+                                                        Reject
+                                                    </Text>
+                                                </RejectButton>
+                                            </NotificationButtonsContainer>
+                                        </NotificationContainer>
+                                    )
+                                }}
+                            />
+                        </>
+                    ):(
+                        <>
+                            <StatusCard
+                                onPress={() => {
+                                    xmppService.updatePresence("online");
+                                    setIsChangeStatusOpen(false);
+                                }}
+                            >
+                                <Text>
+                                    Online
+                                </Text>
+                                <StatusBall
+                                    status="online"
+                                />
+                            </StatusCard>
+                            <StatusCard
+                                onPress={() => {
+                                    xmppService.updatePresence("away");
+                                    setIsChangeStatusOpen(false);
+                                }}
+                            >
+                                <Text>
+                                    Away
+                                </Text>
+                                <StatusBall
+                                    status="away"
+                                />
+                            </StatusCard>
+                            <StatusCard
+                                onPress={() => {
+                                    xmppService.updatePresence("xa");
+                                    setIsChangeStatusOpen(false);
+                                }}
+                            >
+                                <Text>
+                                    Extended Away
+                                </Text>
+                                <StatusBall
+                                    status="xa"
+                                />
+                            </StatusCard>
+                            <StatusCard
+                                onPress={() => {
+                                    xmppService.updatePresence("dnd");
+                                    setIsChangeStatusOpen(false);
+                                }}
+                            >
+                                <Text>
+                                    Do Not Disturb
+                                </Text>
+                                <StatusBall
+                                    status="dnd"
+                                />
+                            </StatusCard>
+                        </>
+                    )}
                 </AddContactModalContainer>
             </ReactNativeModal>
             {/* File content */}

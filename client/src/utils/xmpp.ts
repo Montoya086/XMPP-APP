@@ -76,11 +76,11 @@ class XMPPService {
     return this.xmpp;
   }
 
-  async sendMessage(to: string, message: string): Promise<void> {
+  async sendMessage(to: string, message: string, chatType: "single" | "group"): Promise<void> {
     if (this.xmpp) {
       const msg = xml(
         'message',
-        { type: 'chat', to },
+        { type: chatType === "single" ? 'chat' : "groupchat", to },
         xml('body', {}, message)
       );
       await this.xmpp.send(msg);
@@ -96,14 +96,11 @@ class XMPPService {
         if (stanza.is('message') && stanza.getChild('body')) {
           const from = stanza.attrs.from;
           const body = stanza.getChild('body').text();
-          callback(from, body, "single");
-        } else {
-          //get group chat invitation
-          if (stanza.is('message') && stanza.getChild('x') && stanza.getChild('x').attrs.xmlns === 'jabber:x:conference') {
-            const from = stanza.attrs.from;
-            const room = stanza.getChild('x').attrs.jid;
-            callback(from, "", "group", room);
-          }
+          const isGroup = from.split("@")[1].split(".")[0] == "conference"
+          const type = isGroup ? "group" : "single"
+          const parsedFrom = isGroup ? from.split("/")[1] : from
+          const room = isGroup ? from.split("/")[0]: undefined
+          callback(parsedFrom, body, type, room);
         }
       });
     } else {
@@ -183,6 +180,25 @@ class XMPPService {
           }
         }
       })
+    } else {
+      console.error('XMPP client is not connected');
+    }
+  }
+
+  listenForGroupChatInvitations(callback: (from: string, roomJid: string) => void): void {
+    if (this.xmpp) {
+      this.xmpp.on('stanza', (stanza: any) => {
+        if (
+          stanza.is('message') &&
+          stanza.getChild('x', 'jabber:x:conference')
+        ) {
+          const from = stanza.attrs.from;
+          const xElement = stanza.getChild('x', 'jabber:x:conference');
+          const roomJid = xElement.attrs.jid;
+  
+          callback(from, roomJid);
+        }
+      });
     } else {
       console.error('XMPP client is not connected');
     }
@@ -361,7 +377,7 @@ class XMPPService {
           const name = identity.attrs.name || null;
           return name;
         } else {
-          console.warn('⚠️ No identity found in disco#info response');
+          console.log('⚠️ No identity found in disco#info response for', groupJid);
           return null;
         }
       } catch (error) {
@@ -371,6 +387,29 @@ class XMPPService {
     } else {
       console.error('XMPP client is not connected');
       return null;
+    }
+  }
+
+  async acceptGroupChatInvitation(roomJid: string, nickname: string): Promise<void> {
+    if (this.xmpp) {
+      try {
+        // Construir el JID completo para unirse a la sala con un nickname
+        const fullRoomJid = `${roomJid}/${nickname}`;
+  
+        // Enviar presencia para unirse a la sala
+        const presence = xml(
+          'presence',
+          { to: fullRoomJid },
+          xml('x', { xmlns: 'http://jabber.org/protocol/muc' })
+        );
+  
+        await this.xmpp.send(presence);
+        console.log(`✅ Joined group chat: ${roomJid} as ${nickname}`);
+      } catch (error) {
+        console.error('Error accepting group chat invitation:', error);
+      }
+    } else {
+      console.error('XMPP client is not connected');
     }
   }
 

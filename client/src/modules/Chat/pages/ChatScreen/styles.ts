@@ -149,6 +149,7 @@ export const AddContactModalContainer = styled.View(({ theme }) => ({
     flex: 1,
     backgroundColor: theme.colors.background0,
     padding: theme.sizes.sm,
+    marginVertical: theme.sizes.xxxl,
     margin: theme.sizes.sm,
     borderRadius: theme.sizes.xs,
     gap: theme.sizes.xs,
@@ -197,4 +198,41 @@ export const FileContainer = styled.TouchableOpacity(({ theme }) => ({
     padding: theme.sizes.xs,
     justifyContent: "center",
     alignItems: "center"
+}))
+
+export const NotificationContainer = styled.View(({ theme }) => ({
+    width: "100%",
+    padding: theme.sizes.xs,
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBlockColor: "#000",
+    gap: theme.sizes.xs
+}))
+
+export const NotificationTextContainer = styled.View(({ theme }) => ({
+    flexDirection: "row",
+    gap: theme.sizes.xxs
+}))
+
+export const NotificationButtonsContainer = styled.View(({ theme }) => ({
+    flexDirection: "row",
+    gap: theme.sizes.xxs
+}))
+
+export const AcceptButton = styled.TouchableOpacity(({ theme }) => ({
+    backgroundColor: theme.colors.success,
+    flex: 1,
+    padding: theme.sizes.xxs,
+    alignItems: "center",
+    justifyContent: "center"
+}))
+
+export const RejectButton = styled.TouchableOpacity(({ theme }) => ({
+    backgroundColor: theme.colors.error,
+    flex: 1,
+    padding: theme.sizes.xxs,
+    alignItems: "center",
+    justifyContent: "center"
 }))

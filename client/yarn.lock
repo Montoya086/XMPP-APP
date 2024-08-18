@@ -4340,6 +4340,7 @@ __metadata:
     prettier: 2.8.8
     react: 18.2.0
     react-native: 0.74.3
+    react-native-autolink: ^4.2.0
     react-native-blob-util: ^0.19.11
     react-native-device-info: ^10.11.0
     react-native-document-picker: ^9.3.0
@@ -4713,6 +4714,15 @@ __metadata:
   version: 1.0.1
   resolution: "async-limiter@npm:1.0.1"
   checksum: 2b849695b465d93ad44c116220dee29a5aeb63adac16c1088983c339b0de57d76e82533e8e364a93a9f997f28bbfc6a92948cefc120652bd07f3b59f8d75cf2b
+  languageName: node
+  linkType: hard
+
+"autolinker@npm:^3.16.2":
+  version: 3.16.2
+  resolution: "autolinker@npm:3.16.2"
+  dependencies:
+    tslib: ^2.3.0
+  checksum: 1d5d20ef23586629ec3c341052e6bb6250399cf5e66db21540c17b2f5b1137066435fb274a2115b57464d05e75b85afad61ef7cdf6ea693ef2920a3748b7249d
   languageName: node
   linkType: hard
 
@@ -10486,6 +10496,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-native-autolink@npm:^4.2.0":
+  version: 4.2.0
+  resolution: "react-native-autolink@npm:4.2.0"
+  dependencies:
+    autolinker: ^3.16.2
+  peerDependencies:
+    react: ">16.8.0"
+    react-native: ">=0.25.0"
+  checksum: 64eeefe2556b75e6d3676a42a65fd5de01769e2eba9c5ee31184a9c07b82233409779009620f4130413f77d6aa89f4e767455d4b60f934342d0c87b725eb87a1
+  languageName: node
+  linkType: hard
+
 "react-native-blob-util@npm:^0.19.11":
   version: 0.19.11
   resolution: "react-native-blob-util@npm:0.19.11"
@@ -12111,7 +12133,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3":
+"tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.3.0":
   version: 2.6.3
   resolution: "tslib@npm:2.6.3"
   checksum: 74fce0e100f1ebd95b8995fbbd0e6c91bdd8f4c35c00d4da62e285a3363aaa534de40a80db30ecfd388ed7c313c42d930ee0eaf108e8114214b180eec3dbe6f5

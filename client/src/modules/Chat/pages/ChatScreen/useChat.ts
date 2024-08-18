@@ -4,7 +4,7 @@ import * as Yup from 'yup';
 import Toast from 'react-native-toast-message';
 import uuid from 'react-native-uuid';
 import { useDispatch } from 'react-redux';
-import { addChat, useAppSelector } from '@store/';
+import { addChat, addMessageGroup, useAppSelector } from '@store/';
 import { addMessage } from '@store/';
 
 interface UseChat {
@@ -21,7 +21,7 @@ export const useChat = ({
 
     const dispatch = useDispatch();
     const { jid, hostName } = useAppSelector(state => state.user);
-    const {jid: currentChat} = useAppSelector(state => state.chatSlice);
+    const {jid: currentChat, type: currentChatType} = useAppSelector(state => state.chatSlice);
 
     const {...messageValues} = useFormik({
         initialValues: {
@@ -30,16 +30,18 @@ export const useChat = ({
         validationSchema: validationSchema,
         onSubmit: (values) => {
             try{
-                sendMessage(values.message, currentChat+"@"+hostName);
-                dispatch(addMessage({ 
-                    user: jid, 
-                    with:currentChat, 
-                    message: { 
-                        message: values.message, 
-                        from: jid, 
-                        uid: uuid.v4().toString() 
-                    } 
-                }));
+                sendMessage(values.message, currentChatType === "single" ? currentChat+"@"+hostName : currentChat, currentChatType as any);
+                if (currentChatType === "single"){
+                    dispatch(addMessage({ 
+                        user: jid, 
+                        with:currentChat, 
+                        message: { 
+                            message: values.message, 
+                            from: jid, 
+                            uid: uuid.v4().toString() 
+                        } 
+                    }));
+                }
 
             } catch (error: any) {
                 Toast.show({
@@ -89,8 +91,8 @@ export const useChat = ({
         }
     });
 
-    const sendMessage = (message: string, to: string) => {
-        xmppService.sendMessage(to, message);
+    const sendMessage = (message: string, to: string, chatType: "single"| "group") => {
+        xmppService.sendMessage(to, message, chatType);
     }
 
     const addContact = (jid: string) => {

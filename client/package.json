@@ -25,6 +25,7 @@
     "lottie-react-native": "^6.5.1",
     "react": "18.2.0",
     "react-native": "0.74.3",
+    "react-native-autolink": "^4.2.0",
     "react-native-blob-util": "^0.19.11",
     "react-native-document-picker": "^9.3.0",
     "react-native-fs": "^2.20.0",

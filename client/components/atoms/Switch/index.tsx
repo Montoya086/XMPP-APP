@@ -4,38 +4,31 @@ import { Container, Text, TextContainer } from "./styles";
 interface ButtonProps {
     text1: string;
     text2: string;
+    current: boolean
     onPress: () => void;
 }
 
 export const SwitchButton: FC<ButtonProps> = ({
     text1,
     text2,
-    onPress
+    onPress,
+    current
 }) => {
 
-    const [selectedState, setSelectedState] = useState(0)
-
-    const handlePress = () =>{
-        if (selectedState === 0){
-            setSelectedState(1)
-        } else {
-            setSelectedState(0)
-        }
-
-        onPress()
-    }
 
     return(
         <Container
-            onPress={handlePress}
+            onPress={()=>{
+                onPress()
+            }}
         >
-            <TextContainer active={selectedState === 0}>
-                <Text active={selectedState === 0}>
+            <TextContainer active={!current}>
+                <Text active={!current}>
                     {text1}
                 </Text>
             </TextContainer>
-            <TextContainer active={selectedState === 1}>
-                <Text active={selectedState === 1}>
+            <TextContainer active={current}>
+                <Text active={current}>
                     {text2}
                 </Text>
             </TextContainer>
