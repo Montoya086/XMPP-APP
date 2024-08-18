@@ -11,6 +11,7 @@ export interface Chat {
     with: string;
     messages: Message[];
     status?: "online" | "away" | "xa" | "dnd" | "offline" ;
+    statusMessage?: string 
     nonRead?: number;
 }
 
@@ -60,6 +61,9 @@ export const databaseSlice = createSlice({
       }
       state.users[action.payload.user].chats[action.payload.with].status = action.payload.status;
     },
+    setStatusMessage: (state, action: PayloadAction<{ user: string; with: string; statusMessage: string}>) => {
+      state.users[action.payload.user].chats[action.payload.with].statusMessage = action.payload.statusMessage;
+    },
     incrementNonRead: (state, action: PayloadAction<{ user: string; with: string }>) => {
       state.users[action.payload.user].chats[action.payload.with].nonRead = (state.users[action.payload.user].chats[action.payload.with].nonRead || 0) + 1;
     },
@@ -72,4 +76,4 @@ export const databaseSlice = createSlice({
   },
 });
 
-export const { registerUser, addMessage, clearChats, addChat, changeStatus, incrementNonRead, resetNonRead, deleteDatabaseAccount } = databaseSlice.actions;
+export const { registerUser, addMessage, clearChats, addChat, changeStatus, incrementNonRead, resetNonRead, deleteDatabaseAccount, setStatusMessage } = databaseSlice.actions;

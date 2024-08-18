@@ -4,14 +4,15 @@ import { FlatList, Keyboard, Linking, Text, TextInput, TouchableOpacity, View } 
 import { RootStackScreenProps } from "src/navigations/types/ScreenProps";
 import xmppService from '../../../../utils/xmpp';
 import { useDispatch } from "react-redux";
-import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead, addMessageGroup, addNotification, removeNotification, GroupMessage, addChatGroup, registerUserGroup, resetNonReadGroup, incrementNonReadGroup, deleteNotificationAccount, deleteDatabaseAccount } from "@store/";
-import { AcceptButton, AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, FileButton, FileContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, NotificationButtonsContainer, NotificationContainer, NotificationTextContainer, RejectButton, SectionTitleContainer, SendButton, StatusBall, StatusCard, UserStatusContainer, UserStatusWrapper } from "./styles";
+import { changeAppState, addMessage, removeUser, setUser, useAppSelector, clearChats, setLoading, addChat, setCurrentChat, changeStatus, incrementNonRead, resetNonRead, addMessageGroup, addNotification, removeNotification, GroupMessage, addChatGroup, registerUserGroup, resetNonReadGroup, incrementNonReadGroup, deleteNotificationAccount, deleteDatabaseAccount, setStatusMessage } from "@store/";
+import { AcceptButton, AddButton, AddContactModalContainer, ChatBubble, ChatContainer, ChatInfoStatusContainer, ChatWrapper, ContactItem, ContactItemNameStatus, ContactsContainer, FileButton, FileContainer, HeaderContainer, InputContainer, InputWrapper, LogoutButton, MenuContainer, NoChatText, NoChatWrapper, NotificationButtonsContainer, NotificationContainer, NotificationTextContainer, RejectButton, SectionTitleContainer, SendButton, SendStatusMessageButton, StatusBall, StatusCard, StatusMessageContainer, UserStatusContainer, UserStatusWrapper } from "./styles";
 import Send from "../../../../assets/icons/send.svg";
 import Menu from "../../../../assets/icons/menu.svg";
 import Off from "../../../../assets/icons/off.svg";
 import Plus from "../../../../assets/icons/plus.svg";
 import Logo from "../../../../assets/icons/logo.svg";
 import Clip from "../../../../assets/icons/clip.svg";
+import Info from "../../../../assets/icons/info.svg"
 import { useChat } from "./useChat";
 import uuid from 'react-native-uuid';
 import ReactNativeModal from "react-native-modal";
@@ -29,8 +30,10 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const [isChangeStatusOpen, setIsChangeStatusOpen] = useState(false);
     const [isServiceConnected, setIsServiceConnected] = useState(false);
     const [statusSwitchState, setStatusSwitchState] = useState(false);
+    const [userInfo, setUserInfo] = useState(false)
     const [fileContent, setFileContent] = useState("")
     const [myStatus, setMyStatus] = useState<"online" | "away" | "xa" | "dnd" | "offline">("offline");
+    const [myStatusMessage, setMyStatusMessage] = useState("")
     const { messageValues, contactValues } = useChat({
         onContactSubmit: () => {
             setIsAddContactOpen(false);
@@ -180,13 +183,23 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 }
             });
 
-            xmppService.listenForPresenceUpdates((status, from) => {
+            xmppService.listenForPresenceUpdates((status, from, statusMessage) => {
+                if(statusMessage && jid != from.split("@")[0]){
+                    dispatch(setStatusMessage({
+                        user: jid, 
+                        with: from.split("@")[0],
+                        statusMessage
+                    }))
+                }
                 if (from.split("@")[1]?.split(".")[0] == "conference"){
                     return
                 }
 
                 if (from.split("@")[0] === jid) {
                     setMyStatus(status);
+                    if(statusMessage){
+                        setMyStatusMessage(statusMessage)
+                    }
                     return;
                 }
                 dispatch(changeStatus({user: jid, with: from.split("@")[0], status}));
@@ -305,6 +318,10 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         handleLogout()
     }
 
+    const handleFetchUserInfo = async()=> {
+        setUserInfo(true)
+    }
+
     return (
         <AppBackground isSafe>
             {/* Chat Screen */}
@@ -329,6 +346,16 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                     >
                         {currentChatName}
                     </Text>
+                    {currentChatType === "single" && (
+                        <TouchableOpacity
+                            onPress={handleFetchUserInfo}
+                        >
+                            <Info
+                                width={30}
+                                height={30}
+                            />
+                        </TouchableOpacity>
+                    )}
 
                 </HeaderContainer>
                 <ChatWrapper>
@@ -827,6 +854,31 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                     status="dnd"
                                 />
                             </StatusCard>
+                            <StatusMessageContainer>
+                                <CustomTextInput
+                                    textInputProps={{
+                                        value: myStatusMessage,
+                                        placeholder: "My status...",
+                                        onChangeText: (value)=>{
+                                            setMyStatusMessage(value)
+                                        }
+                                    }}
+                                />
+                                <SendStatusMessageButton
+                                    onPress={()=>{
+                                        xmppService.updatePresence(myStatus, myStatusMessage)
+                                    }}
+                                >
+                                    <Text
+                                        style={{
+                                            color: "#fff",
+                                            fontWeight: "bold"
+                                        }}
+                                    >
+                                        Send
+                                    </Text>
+                                </SendStatusMessageButton>
+                            </StatusMessageContainer>
                         </>
                     )}
                 </AddContactModalContainer>
@@ -860,6 +912,58 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                         accessible={false}
                         value={fileContent}
                     />
+                </AddContactModalContainer>
+            </ReactNativeModal>
+            {/* UserInfo modal */}
+            <ReactNativeModal
+                isVisible={!!userInfo}
+                onBackdropPress={() => {
+                    setUserInfo(false)
+                }}
+                onBackButtonPress={() => {
+                    setUserInfo(false)
+                }}
+
+                style={{
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    margin: 0,
+                    flexDirection: 'row',
+                }}
+
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+            >
+                <AddContactModalContainer>
+                    <Text
+                        style={{
+                            color: "#000",
+                            fontSize: 32,
+                        }}
+                    >
+                        {currentChat}
+                    </Text>
+                    <ChatInfoStatusContainer>
+                        <Text
+                            style={{
+                                color: "#000",
+                                fontSize: 18,
+                            }}
+                        >
+                            {users[jid]?.chats[currentChat]?.status || "offline"}
+                        </Text>
+                        <StatusBall
+                            status={users[jid]?.chats[currentChat]?.status || "offline"}
+                        />
+                    </ChatInfoStatusContainer>
+                    <Text
+                        style={{
+                            color: "#000",
+                            fontSize: 18,
+                        }}
+                    >
+                        {"\""+users[jid]?.chats[currentChat]?.statusMessage+"\"" || "No status"}
+                    </Text>
                 </AddContactModalContainer>
             </ReactNativeModal>
         </AppBackground>

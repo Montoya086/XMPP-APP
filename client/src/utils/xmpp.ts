@@ -118,7 +118,7 @@ class XMPPService {
     }
   }
 
-  listenForPresenceUpdates(callback: (status: "online" | "away" | "xa" | "dnd" | "offline", from: string) => void): void {
+  listenForPresenceUpdates(callback: (status: "online" | "away" | "xa" | "dnd" | "offline", from: string, statusMessage?: string) => void): void {
     if (this.xmpp) {
       this.xmpp.on('stanza', (stanza: any) => {
         console.log('📥 Received stanza:', stanza.toString());
@@ -131,7 +131,9 @@ class XMPPService {
           }
           const show = stanza.getChild('show');
           const status = show ? show.text() : 'online';
-          callback(status, from);
+          const statusElement = stanza.getChild('status');
+          const statusMessage = statusElement ? statusElement.text() : null;
+          callback(status, from, statusMessage);
         }
       });
     } else {
@@ -299,15 +301,18 @@ class XMPPService {
     }
   }
 
-  async updatePresence(status: "online" | "away" | "xa" | "dnd" | "offline"): Promise<void> {
+  async updatePresence(status: "online" | "away" | "xa" | "dnd" | "offline", statusMessage?: string): Promise<void> {
     if (this.xmpp) {
       let presence;
       if (status === 'online') {
-        presence = xml('presence');
+        presence = xml('presence', 
+          {},
+          xml('status', {}, statusMessage || ""));
       } else {
         presence = xml(
           'presence',
           {},
+          xml('status', {}, statusMessage || ""),
           xml('show', {}, status),
         );
       }

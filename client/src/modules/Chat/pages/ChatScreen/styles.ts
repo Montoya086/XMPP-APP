@@ -149,7 +149,7 @@ export const AddContactModalContainer = styled.View(({ theme }) => ({
     flex: 1,
     backgroundColor: theme.colors.background0,
     padding: theme.sizes.sm,
-    marginVertical: theme.sizes.xxxl,
+    marginVertical: theme.sizes.xxl,
     margin: theme.sizes.sm,
     borderRadius: theme.sizes.xs,
     gap: theme.sizes.xs,
@@ -235,4 +235,26 @@ export const RejectButton = styled.TouchableOpacity(({ theme }) => ({
     padding: theme.sizes.xxs,
     alignItems: "center",
     justifyContent: "center"
+}))
+
+export const ChatInfoStatusContainer = styled.View(({ theme }) => ({
+    flexDirection: "row",
+    gap: theme.sizes.sm,
+    alignItems: "center",
+    justifyContent: "center"
+}))
+
+export const StatusMessageContainer = styled.View(({ theme }) => ({
+    flexDirection: "row",
+    gap: theme.sizes.xs,
+    width: "70%",
+    alignSelf: "flex-start"
+}))
+
+export const SendStatusMessageButton = styled.TouchableOpacity(({ theme }) => ({
+    padding: theme.sizes.xs,
+    backgroundColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.sizes.xs
 }))
