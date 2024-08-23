@@ -474,6 +474,29 @@ class XMPPService {
     }
   }
 
+  async sendGroupInvitation(groupJid: string, inviteeJid: string, reason?: string): Promise<void> {
+    if (this.xmpp) {
+      try {
+        const invitation = xml(
+          'message',
+          { to: groupJid },
+          xml('x', { xmlns: 'http://jabber.org/protocol/muc#user' },
+            xml('invite', { to: inviteeJid },
+              xml('reason', {}, reason || 'Group invitation')
+            )
+          )
+        );
+
+        await this.xmpp.send(invitation);
+        console.log(`📨 Invitación enviada a ${inviteeJid} para unirse al grupo ${groupJid}`);
+      } catch (error) {
+        console.error('Error al enviar la invitación:', error);
+      }
+    } else {
+      console.error('XMPP client is not connected');
+    }
+  }
+
   async deleteAccount(): Promise<void> {
     if (this.xmpp) {
       try {

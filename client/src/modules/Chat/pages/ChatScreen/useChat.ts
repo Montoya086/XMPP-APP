@@ -135,6 +135,36 @@ export const useChat = ({
         }
     });
 
+    const groupAddUserValidationSchema = Yup.object({
+        user: Yup.string().required("User jid is required"),
+    });
+
+    const {...groupAddUserValues} = useFormik({
+        initialValues: {
+            user: "",
+        },
+        validationSchema: groupAddUserValidationSchema,
+        onSubmit: async (values) => {
+            try{
+                await xmppService.sendGroupInvitation(
+                    currentChat,
+                    values.user + "@" + hostName
+                )
+                Toast.show({
+                    type: "success",
+                    text1: "Success",
+                    text2: "User added successfully"
+                })
+            } catch (error: any) {
+                Toast.show({
+                    type: "error",
+                    text1: "Error",
+                    text2: error.message
+                })
+            }
+        }
+    });
+
     const sendMessage = (message: string, to: string, chatType: "single"| "group") => {
         xmppService.sendMessage(to, message, chatType);
     }
@@ -146,6 +176,7 @@ export const useChat = ({
     return {
         messageValues,
         contactValues,
-        groupValues
+        groupValues,
+        groupAddUserValues
     }
 }

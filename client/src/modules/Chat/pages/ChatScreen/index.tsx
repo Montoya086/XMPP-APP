@@ -12,7 +12,8 @@ import Off from "../../../../assets/icons/off.svg";
 import Plus from "../../../../assets/icons/plus.svg";
 import Logo from "../../../../assets/icons/logo.svg";
 import Clip from "../../../../assets/icons/clip.svg";
-import Info from "../../../../assets/icons/info.svg"
+import Info from "../../../../assets/icons/info.svg";
+import AddUser from "../../../../assets/icons/add_user.svg";
 import { useChat } from "./useChat";
 import uuid from 'react-native-uuid';
 import ReactNativeModal from "react-native-modal";
@@ -31,11 +32,12 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const [isServiceConnected, setIsServiceConnected] = useState(false);
     const [statusSwitchState, setStatusSwitchState] = useState(false);
     const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
+    const [isAddUserGroupOpen, setIsAddUserGroupOpen] = useState(false);
     const [userInfo, setUserInfo] = useState(false)
     const [fileContent, setFileContent] = useState("")
     const [myStatus, setMyStatus] = useState<"online" | "away" | "xa" | "dnd" | "offline">("offline");
     const [myStatusMessage, setMyStatusMessage] = useState("")
-    const { messageValues, contactValues, groupValues } = useChat({
+    const { messageValues, contactValues, groupValues, groupAddUserValues } = useChat({
         onContactSubmit: () => {
             setIsAddContactOpen(false);
         }
@@ -361,11 +363,22 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                     >
                         {currentChatName}
                     </Text>
-                    {currentChatType === "single" && (
+                    {currentChatType === "single" ? (
                         <TouchableOpacity
                             onPress={handleFetchUserInfo}
                         >
                             <Info
+                                width={30}
+                                height={30}
+                            />
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={() => {
+                                setIsAddUserGroupOpen(true);
+                            }}
+                        >
+                            <AddUser
                                 width={30}
                                 height={30}
                             />
@@ -1024,6 +1037,43 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                         onPress={()=>{
                             groupValues.handleSubmit()
                             setIsAddGroupOpen(false)
+                        }}
+                    />
+                </AddContactModalContainer>
+            </ReactNativeModal>
+            {/* Add User to Group Modal */}
+            <ReactNativeModal
+                isVisible={isAddUserGroupOpen}
+                onBackdropPress={() => {
+                    setIsAddUserGroupOpen(false);
+                }}
+                onBackButtonPress={() => {
+                    setIsAddUserGroupOpen(false);
+                }}
+
+                style={{
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    margin: 0,
+                    flexDirection: 'row',
+                }}
+
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+            >
+                <AddContactModalContainer>
+                    <CustomTextInput
+                        textInputProps={{
+                            placeholder: "Enter user JID",
+                            value: groupAddUserValues.values.user,
+                            onChangeText: groupAddUserValues.handleChange("user"),
+                        }}
+                    />
+                    <Button
+                        text = "Invite User"
+                        onPress={()=>{
+                            groupAddUserValues.handleSubmit()
+                            setIsAddUserGroupOpen(false)
                         }}
                     />
                 </AddContactModalContainer>
