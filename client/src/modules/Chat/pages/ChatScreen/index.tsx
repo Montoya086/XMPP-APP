@@ -34,6 +34,10 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
     const [isAddUserGroupOpen, setIsAddUserGroupOpen] = useState(false);
     const [userInfo, setUserInfo] = useState(false)
+    const [groupParticipants, setGroupParticipants] = useState<{
+        jid: string,
+        name: string
+    }[]>([])
     const [fileContent, setFileContent] = useState("")
     const [myStatus, setMyStatus] = useState<"online" | "away" | "xa" | "dnd" | "offline">("offline");
     const [myStatusMessage, setMyStatusMessage] = useState("")
@@ -339,6 +343,12 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         setUserInfo(true)
     }
 
+    const handleFetchGroupInfo = async()=> {
+        const userList = await xmppService.getGroupParticipants(currentChat)
+        setGroupParticipants(userList)
+        setUserInfo(true)
+    }
+
     return (
         <AppBackground isSafe>
             {/* Chat Screen */}
@@ -363,16 +373,15 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                     >
                         {currentChatName}
                     </Text>
-                    {currentChatType === "single" ? (
-                        <TouchableOpacity
-                            onPress={handleFetchUserInfo}
-                        >
-                            <Info
-                                width={30}
-                                height={30}
-                            />
-                        </TouchableOpacity>
-                    ) : (
+                    <TouchableOpacity
+                        onPress={currentChatType === "single" ? handleFetchUserInfo : handleFetchGroupInfo}
+                    >
+                        <Info
+                            width={30}
+                            height={30}
+                        />
+                    </TouchableOpacity>
+                    {currentChatType === "group" && (
                         <TouchableOpacity
                             onPress={() => {
                                 setIsAddUserGroupOpen(true);
@@ -972,37 +981,86 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                 animationIn="slideInUp"
                 animationOut="slideOutDown"
             >
-                <AddContactModalContainer>
-                    <Text
-                        style={{
-                            color: "#000",
-                            fontSize: 32,
-                        }}
-                    >
-                        {currentChat}
-                    </Text>
-                    <ChatInfoStatusContainer>
+                {currentChatType === "single" ? (
+                    <AddContactModalContainer>
+                        <Text
+                            style={{
+                                color: "#000",
+                                fontSize: 32,
+                            }}
+                        >
+                            {currentChat}
+                        </Text>
+                        <ChatInfoStatusContainer>
+                            <Text
+                                style={{
+                                    color: "#000",
+                                    fontSize: 18,
+                                }}
+                            >
+                                {users[jid]?.chats[currentChat]?.status || "offline"}
+                            </Text>
+                            <StatusBall
+                                status={users[jid]?.chats[currentChat]?.status || "offline"}
+                            />
+                        </ChatInfoStatusContainer>
                         <Text
                             style={{
                                 color: "#000",
                                 fontSize: 18,
                             }}
                         >
-                            {users[jid]?.chats[currentChat]?.status || "offline"}
+                            {"\""+users[jid]?.chats[currentChat]?.statusMessage+"\"" || "No status"}
                         </Text>
-                        <StatusBall
-                            status={users[jid]?.chats[currentChat]?.status || "offline"}
-                        />
-                    </ChatInfoStatusContainer>
-                    <Text
+                    </AddContactModalContainer>
+                ):(
+                    <AddContactModalContainer
                         style={{
-                            color: "#000",
-                            fontSize: 18,
+                            flexDirection: "column",
+                            maxHeight: "75%"
                         }}
                     >
-                        {"\""+users[jid]?.chats[currentChat]?.statusMessage+"\"" || "No status"}
-                    </Text>
-                </AddContactModalContainer>
+                        <FlatList
+                            data={groupParticipants}
+                            renderItem={({item})=>{
+                                return (
+                                    <ContactItem
+                                        isSelected={false}
+                                    >
+                                        <ContactItemNameStatus>
+                                            <Text
+                                                style={{
+                                                    color: "#000",
+                                                    fontSize: 18,
+                                                }}
+                                            >
+                                                {item.name}
+                                            </Text>
+                                        </ContactItemNameStatus>
+                                        <Text
+                                            style={{
+                                                color: "#000",
+                                                fontSize: 10,
+                                            }}
+                                        >
+                                            {item.jid}
+                                        </Text>
+                                    </ContactItem>
+                                )
+                            }}
+                            keyExtractor={(item) => item.jid}
+                            ItemSeparatorComponent={() => {
+                                return (
+                                    <View
+                                        style={{
+                                            height: 5,
+                                        }}
+                                    />
+                                )
+                            }}
+                        />
+                    </AddContactModalContainer>
+                )}
             </ReactNativeModal>
             {/* Add Group Modal */}
             <ReactNativeModal

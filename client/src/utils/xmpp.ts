@@ -435,7 +435,7 @@ class XMPPService {
         );
 
         await this.xmpp.send(presence);
-        console.log(`✅ Creando y uniendo al grupo: ${groupJid} como ${nickname}`);
+        console.log(`✅ Creating group: ${groupJid} as ${nickname}`);
 
         const iq = xml(
           'iq',
@@ -462,10 +462,10 @@ class XMPPService {
 
         const response = await this.xmpp.sendReceive(iq);
         const resGroupJid = response.attrs.from.split('/')[0];
-        console.log(`✅ Grupo ${groupName} configurado como privado con éxito: ${resGroupJid}`);
+        console.log(`✅ Group ${groupName} config success: ${resGroupJid}`);
         return resGroupJid;
       } catch (error) {
-        console.error('Error al crear el grupo:', error);
+        console.error('Error creationg group:', error);
         return Promise.reject(error);
       }
     } else {
@@ -488,14 +488,47 @@ class XMPPService {
         );
 
         await this.xmpp.send(invitation);
-        console.log(`📨 Invitación enviada a ${inviteeJid} para unirse al grupo ${groupJid}`);
+        console.log(`📨 Invitation sent ${inviteeJid} to join group ${groupJid}`);
       } catch (error) {
-        console.error('Error al enviar la invitación:', error);
+        console.error('Error sending invitation:', error);
       }
     } else {
       console.error('XMPP client is not connected');
     }
   }
+
+  async getGroupParticipants(groupJid: string): Promise<{ jid: string; name: string }[]> {
+    if (this.xmpp) {
+      try {
+        const iq = xml(
+          'iq',
+          { type: 'get', to: groupJid, id: 'get-group-participants' },
+          xml('query', { xmlns: 'http://jabber.org/protocol/disco#items' })
+        );
+
+        const response = await this.xmpp.sendReceive(iq);
+        console.log(`📥 Participants of group ${groupJid}: ${response.toString()}`);
+
+        const query = response.getChild('query');
+        if (query) {
+          const participants = query.getChildren('item').map((item: any) => ({
+            jid: item.attrs.jid,
+            name: item.attrs.name || item.attrs.jid.split('/')[1],
+          }));
+          return participants;
+        }
+
+        return [];
+      } catch (error) {
+        console.error('Error obtaining participants: ', error);
+        return [];
+      }
+    } else {
+      console.error('XMPP client is not connected');
+      return [];
+    }
+  }
+
 
   async deleteAccount(): Promise<void> {
     if (this.xmpp) {
