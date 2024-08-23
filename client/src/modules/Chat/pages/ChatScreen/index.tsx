@@ -373,25 +373,29 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                     >
                         {currentChatName}
                     </Text>
-                    <TouchableOpacity
-                        onPress={currentChatType === "single" ? handleFetchUserInfo : handleFetchGroupInfo}
-                    >
-                        <Info
-                            width={30}
-                            height={30}
-                        />
-                    </TouchableOpacity>
-                    {currentChatType === "group" && (
-                        <TouchableOpacity
-                            onPress={() => {
-                                setIsAddUserGroupOpen(true);
-                            }}
-                        >
-                            <AddUser
-                                width={30}
-                                height={30}
-                            />
-                        </TouchableOpacity>
+                    {!!currentChat && (
+                        <>
+                            <TouchableOpacity
+                                onPress={currentChatType === "single" ? handleFetchUserInfo : handleFetchGroupInfo}
+                            >
+                                <Info
+                                    width={30}
+                                    height={30}
+                                />
+                            </TouchableOpacity>
+                            {currentChatType === "group" && (
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setIsAddUserGroupOpen(true);
+                                    }}
+                                >
+                                    <AddUser
+                                        width={30}
+                                        height={30}
+                                    />
+                                </TouchableOpacity>
+                            )}  
+                        </>
                     )}
 
                 </HeaderContainer>
@@ -1010,7 +1014,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                                 fontSize: 18,
                             }}
                         >
-                            {"\""+users[jid]?.chats[currentChat]?.statusMessage+"\"" || "No status"}
+                            {users[jid]?.chats[currentChat]?.statusMessage ? "\""+users[jid]?.chats[currentChat]?.statusMessage+"\"" : "No status"}
                         </Text>
                     </AddContactModalContainer>
                 ):(
