@@ -4,7 +4,7 @@ import * as Yup from 'yup';
 import Toast from 'react-native-toast-message';
 import uuid from 'react-native-uuid';
 import { useDispatch } from 'react-redux';
-import { addChat, addMessageGroup, useAppSelector } from '@store/';
+import { addChat, addChatGroup, addGroup, addMessageGroup, useAppSelector } from '@store/';
 import { addMessage } from '@store/';
 
 interface UseChat {
@@ -91,6 +91,50 @@ export const useChat = ({
         }
     });
 
+    const groupValidationSchema = Yup.object({
+        name: Yup.string().required("Group name is required"),
+    });
+
+    const {...groupValues} = useFormik({
+        initialValues: {
+            name: "",
+        },
+        validationSchema: groupValidationSchema,
+        onSubmit: async (values) => {
+            try{
+                const groupName = await xmppService.createGroup(
+                    values.name,
+                    jid,
+                    hostName
+                )
+
+                dispatch(addGroup({
+                    user: jid,
+                    group: {
+                        jid: groupName
+                    }
+                }))
+                dispatch(addChatGroup({
+                    user: jid,
+                    with: groupName,
+                    name: values.name
+                }))
+                await xmppService.acceptGroupChatInvitation(groupName, jid);
+                Toast.show({
+                    type: "success",
+                    text1: "Success",
+                    text2: "Group created successfully"
+                })
+            } catch (error: any) {
+                Toast.show({
+                    type: "error",
+                    text1: "Error",
+                    text2: error.message
+                })
+            }
+        }
+    });
+
     const sendMessage = (message: string, to: string, chatType: "single"| "group") => {
         xmppService.sendMessage(to, message, chatType);
     }
@@ -101,6 +145,7 @@ export const useChat = ({
 
     return {
         messageValues,
-        contactValues
+        contactValues,
+        groupValues
     }
 }

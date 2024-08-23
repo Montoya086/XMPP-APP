@@ -30,11 +30,12 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const [isChangeStatusOpen, setIsChangeStatusOpen] = useState(false);
     const [isServiceConnected, setIsServiceConnected] = useState(false);
     const [statusSwitchState, setStatusSwitchState] = useState(false);
+    const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
     const [userInfo, setUserInfo] = useState(false)
     const [fileContent, setFileContent] = useState("")
     const [myStatus, setMyStatus] = useState<"online" | "away" | "xa" | "dnd" | "offline">("offline");
     const [myStatusMessage, setMyStatusMessage] = useState("")
-    const { messageValues, contactValues } = useChat({
+    const { messageValues, contactValues, groupValues } = useChat({
         onContactSubmit: () => {
             setIsAddContactOpen(false);
         }
@@ -43,6 +44,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     const { users:groupUsers } = useAppSelector(state => state.groupDatabase)
     const {isLoading} = useAppSelector(state => state.loading);
     const { jid:currentChat, type: currentChatType, name: currentChatName } = useAppSelector(state => state.chatSlice);
+    const { users:usersGroupList } = useAppSelector(state => state.groupsSlice);
     const {
         content: notifications
     } = useAppSelector(state => state.notificationsSlice) 
@@ -83,7 +85,8 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
     useEffect(() => {
         console.log("DATABASE", JSON.stringify(users, null, 2));
         console.log("GROUP DATABASE", JSON.stringify(groupUsers, null, 2))
-    }, [users, groupUsers]);
+        console.log("GROUPS", JSON.stringify(usersGroupList, null, 2))
+    }, []);
 
     const handleGetContacts = async () => {
         const res = await xmppService.getContacts();
@@ -92,9 +95,20 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         res.contacts.map((contact) => {
             dispatch(addChat({user: jid, with: contact.jid.split("@")[0]}));
         })
-
-        
     }
+
+
+    const handleSubscribeToSavedGroups = async () => {
+        const thisUserGroups = usersGroupList[jid]
+        thisUserGroups.map((group) => {
+            dispatch(addChatGroup({
+                user: jid, 
+                with: group.jid,
+                name: group.jid.split("@")[0]
+            }))
+        })
+    }
+
     // Connect to XMPP
     useEffect(() => {
         console.log("USE EFFECT", jid);
@@ -113,6 +127,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
             setTimeout(async () => {
                 dispatch(registerUserGroup(jid))
                 await handleGetContacts();
+                //await handleSubscribeToSavedGroups();
                 xmppService.unblockPresence(jid, true);
                 dispatch(setLoading(false))
                 setIsServiceConnected(true);
@@ -150,7 +165,7 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
         dispatch(addMessageGroup({
             user: jid,
             with: roomJid,
-            name: roomJid,
+            name: roomJid.split("@")[0],
             message: chatGroupMessage
         }))
         dispatch(incrementNonReadGroup({user: jid, with: roomJid}));
@@ -624,6 +639,16 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                             >
                                 Groups
                             </Text>
+                            <AddButton
+                                onPress={() => {
+                                    setIsAddGroupOpen(true);
+                                }}
+                            >
+                                <Plus
+                                    width={15}
+                                    height={15}
+                                />
+                            </AddButton>
                         </SectionTitleContainer>
                         {!!groupUsers[jid]?.chats && (
                             <FlatList
@@ -964,6 +989,43 @@ const ChatScreen:FC<RootStackScreenProps<"Chat">> = () => {
                     >
                         {"\""+users[jid]?.chats[currentChat]?.statusMessage+"\"" || "No status"}
                     </Text>
+                </AddContactModalContainer>
+            </ReactNativeModal>
+            {/* Add Group Modal */}
+            <ReactNativeModal
+                isVisible={isAddGroupOpen}
+                onBackdropPress={() => {
+                    setIsAddGroupOpen(false);
+                }}
+                onBackButtonPress={() => {
+                    setIsAddGroupOpen(false);
+                }}
+
+                style={{
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    margin: 0,
+                    flexDirection: 'row',
+                }}
+
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+            >
+                <AddContactModalContainer>
+                    <CustomTextInput
+                        textInputProps={{
+                            placeholder: "Enter group name",
+                            value: groupValues.values.name,
+                            onChangeText: groupValues.handleChange("name"),
+                        }}
+                    />
+                    <Button
+                        text = "Create Group"
+                        onPress={()=>{
+                            groupValues.handleSubmit()
+                            setIsAddGroupOpen(false)
+                        }}
+                    />
                 </AddContactModalContainer>
             </ReactNativeModal>
         </AppBackground>

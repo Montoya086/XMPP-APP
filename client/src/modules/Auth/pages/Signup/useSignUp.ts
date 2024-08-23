@@ -3,7 +3,7 @@ import { useFormik } from 'formik';
 import xmppService from '../../../../utils/xmpp';
 import Toast from 'react-native-toast-message';
 import { useDispatch } from 'react-redux';
-import { changeAppState, registerUser, registerUserGroup, setLoading, setUser } from '@store/';
+import { changeAppState, registerUser, registerUserGroup, registerUserGroups, setLoading, setUser } from '@store/';
 
 export const useSignUp = () => {
 
@@ -50,6 +50,7 @@ export const useSignUp = () => {
                 }));
                 dispatch(registerUser(values.jid));
                 dispatch(registerUserGroup(values.jid))
+                dispatch(registerUserGroups(values.jid))
                 setTimeout(()=>{
                     dispatch(changeAppState({appNavigationState: 'LOGGED_IN'}));
                 },1000)

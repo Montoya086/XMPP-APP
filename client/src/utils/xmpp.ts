@@ -422,6 +422,58 @@ class XMPPService {
     }
   }
 
+  async createGroup(groupName: string, nickname: string, domain: string): Promise<string> {
+    if (this.xmpp) {
+      const groupJid = `${groupName}@conference.${domain}`;
+      const fullGroupJid = `${groupJid}/${nickname}`;
+
+      try {
+        const presence = xml(
+          'presence',
+          { to: fullGroupJid },
+          xml('x', { xmlns: 'http://jabber.org/protocol/muc' })
+        );
+
+        await this.xmpp.send(presence);
+        console.log(`✅ Creando y uniendo al grupo: ${groupJid} como ${nickname}`);
+
+        const iq = xml(
+          'iq',
+          { type: 'set', to: groupJid, id: 'create-group-config' },
+          xml(
+            'query',
+            { xmlns: 'http://jabber.org/protocol/muc#owner' },
+            xml('x', { xmlns: 'jabber:x:data', type: 'submit' },
+              xml('field', { var: 'FORM_TYPE', type: 'hidden' },
+                xml('value', {}, 'http://jabber.org/protocol/muc#roomconfig')
+              ),
+              xml('field', { var: 'muc#roomconfig_persistentroom' },
+                xml('value', {}, '1')
+              ),
+              xml('field', { var: 'muc#roomconfig_roomname' },
+                xml('value', {}, groupName)
+              ),
+              xml('field', { var: 'muc#roomconfig_publicroom' },
+                xml('value', {}, '0')
+              )
+            )
+          )
+        );
+
+        const response = await this.xmpp.sendReceive(iq);
+        const resGroupJid = response.attrs.from.split('/')[0];
+        console.log(`✅ Grupo ${groupName} configurado como privado con éxito: ${resGroupJid}`);
+        return resGroupJid;
+      } catch (error) {
+        console.error('Error al crear el grupo:', error);
+        return Promise.reject(error);
+      }
+    } else {
+      console.error('XMPP client is not connected');
+      return Promise.reject('XMPP client is not connected');
+    }
+  }
+
   async deleteAccount(): Promise<void> {
     if (this.xmpp) {
       try {
