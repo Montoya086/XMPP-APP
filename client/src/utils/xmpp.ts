@@ -16,8 +16,23 @@ interface File {
 }
 
 class XMPPService {
+  // Singleton instance
   private xmpp: Client | null = null;
 
+  /**
+   * Connects to the XMPP server
+   * Requires the user to be disconnected
+   * Logs the error if any
+   * Logs the success message if the user is connected
+   * @param service 
+   * @param domain 
+   * @param resource 
+   * @param username 
+   * @param password 
+   * @returns
+   * @example
+   * connect({ service, domain, resource, username, password });
+   */
   connect({ service, domain, resource, username, password }: XMPPConfig): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.xmpp) {
@@ -48,6 +63,13 @@ class XMPPService {
     });
   }
 
+  /**
+   * Disconnects the user from the XMPP server
+   * Requires the user to be connected
+   * Logs the error if any
+   * @example
+   * disconnect();
+   */
   disconnect(): void {
     if (this.xmpp) {
       this.xmpp.removeAllListeners('stanza');
@@ -56,6 +78,15 @@ class XMPPService {
     }
   }
 
+  /**
+   * Listens for connection open events
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the error if the user is not connected
+   * @param callback 
+   * @example
+   * listenForConnectionOpen(() => {
+   */
   listenForConnectionOpen(callback: () => void): void {
     if (this.xmpp) {
       this.xmpp.on('online', () => {
@@ -66,16 +97,41 @@ class XMPPService {
     }
   }
 
+  /**
+   * Removes the listener for stanzas
+   * Requires the user to be connected
+   * @example
+   * removeStanzaListener();
+   */
   removeStanzaListener(): void {
     if (this.xmpp) {
       this.xmpp.removeAllListeners('stanza');
     }
   }
 
+  /**
+   * Obtains the XMPP client of the singleton
+   * @returns the XMPP client or null if the user is not connected
+   * @example
+   * getXMPP();
+   */
   getXMPP(): Client | null {
     return this.xmpp;
   }
 
+  /**
+   * Sends a message to a user
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the message is sent
+   * Logs the error if the user is not connected
+   * @param to 
+   * @param message 
+   * @param chatType 
+   * @returns
+   * @example
+   * sendMessage('to', 'message', 'chatType');
+   */
   async sendMessage(to: string, message: string, chatType: "single" | "group"): Promise<void> {
     if (this.xmpp) {
       const msg = xml(
@@ -89,6 +145,17 @@ class XMPPService {
     }
   }
 
+  /**
+   * Listens for messages
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the message if obtained
+   * Logs the error if the user is not connected
+   * @param callback 
+   * @returns
+   * @example
+   * listenForMessages((from, message, type, room) => {
+   */
   listenForMessages(callback: (from: string, message: string, type: "single" | "group", room?: string) => void): void {
     if (this.xmpp) {
       this.xmpp.removeAllListeners('stanza');
@@ -108,6 +175,17 @@ class XMPPService {
     }
   }
 
+  /**
+   * Listens for connection events
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the connection event if obtained
+   * Logs the error if the user is not connected
+   * @param callback 
+   * @returns
+   * @example
+   * listenForConnection(() => {
+   */
   listenForConnection(callback: () => void): void {
     if (this.xmpp) {
       this.xmpp.on('online', async () => {
@@ -118,6 +196,17 @@ class XMPPService {
     }
   }
 
+  /**
+   * Listens for presence updates
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the presence update if obtained
+   * Logs the error if the user is not connected
+   * @param callback 
+   * @returns
+   * @example
+   * listenForPresenceUpdates((status, from, statusMessage) => {
+   */
   listenForPresenceUpdates(callback: (status: "online" | "away" | "xa" | "dnd" | "offline", from: string, statusMessage?: string) => void): void {
     if (this.xmpp) {
       this.xmpp.on('stanza', (stanza: any) => {
@@ -141,6 +230,17 @@ class XMPPService {
     }
   }
 
+  /**
+   * Listens for subscription requests
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the subscription request if obtained
+   * Logs the error if the user is not connected
+   * @param callback 
+   * @returns
+   * @example
+   * listenForSubscriptionRequests((from) => {
+   */
   listenForSubscriptionRequests(callback: (from: string) => void): void {
     if (this.xmpp) {
       this.xmpp.on('stanza', (stanza: any) => {
@@ -155,6 +255,17 @@ class XMPPService {
     }
   }
 
+  /**
+   * Listens for file messages
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the file message if obtained
+   * Logs the error if the user is not connected
+   * @param callback 
+   * @returns
+   * @example
+   * listenForFileMessages((from, message) => {
+   */
   listenForFileMessages(callback: (from: string, message: string) => void): void {
     if (this.xmpp) {
       this.xmpp.on('stanza', (stanza: any) => {
@@ -187,6 +298,17 @@ class XMPPService {
     }
   }
 
+  /**
+   * Listens for group chat invitations
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the group chat invitation if obtained
+   * Logs the error if the user is not connected
+   * @param callback 
+   * @returns
+   * @example
+   * listenForGroupChatInvitations((from, roomJid) => {
+   */
   listenForGroupChatInvitations(callback: (from: string, roomJid: string) => void): void {
     if (this.xmpp) {
       this.xmpp.on('stanza', (stanza: any) => {
@@ -206,6 +328,18 @@ class XMPPService {
     }
   }
 
+  /**
+   * Registers a new user
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the user is registered
+   * Logs the error if the user is not connected
+   * @param jid 
+   * @param password 
+   * @returns
+   * @example
+   * registerUser('jid', 'password');
+   */
   registerUser = async (jid: string, password: string) => {
     if (this.xmpp) {
       const iq = xml(
@@ -225,6 +359,16 @@ class XMPPService {
     }
   }
 
+  /**
+   * Registers a new user and reconnects with the new user
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the user is registered and reconnected
+   * Logs the error if the user is not connected
+   * @param rootConfig 
+   * @param newUserConfig 
+   * @returns Success or error message
+   */
   async executeRegisterAndReconnect(
     rootConfig: XMPPConfig,
     newUserConfig: { username: string; password: string }
@@ -255,6 +399,16 @@ class XMPPService {
     }
   }
 
+  /**
+   * Gets the contacts of the user
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the contacts if obtained
+   * Logs the error if the user is not connected
+   * @returns an array of objects with the contacts of the user or an empty array if the user is not connected
+   * @example
+   * getContacts();
+   */
   async getContacts(): Promise<{
     contacts: { jid: string; name: string; subscription: string }[];
   }> {
@@ -286,6 +440,17 @@ class XMPPService {
     }
   }
 
+  /**
+   * Accepts a contact request
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the contact request is accepted
+   * Logs the error if the user is not connected
+   * @param contactJid 
+   * @returns true if the request is sent, false if the user is not connected
+   * @example
+   * acceptContactRequest('contactJid');
+   */
   async addContact(contactJid: string): Promise<boolean> {
     if (this.xmpp) {
       const presence = xml(
@@ -301,6 +466,18 @@ class XMPPService {
     }
   }
 
+  /**
+   * Accepts a contact request
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the contact request is accepted
+   * Logs the error if the user is not connected
+   * @param status 
+   * @param statusMessage 
+   * @returns
+   * @example
+   * acceptContactRequest('status', 'statusMessage');
+   */
   async updatePresence(status: "online" | "away" | "xa" | "dnd" | "offline", statusMessage?: string): Promise<void> {
     if (this.xmpp) {
       let presence;
@@ -324,6 +501,18 @@ class XMPPService {
     }
   }
 
+  /**
+   * Unblocks the presence of a user
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the user is unblocked
+   * Logs the error if the user is not connected
+   * @param from 
+   * @param flag 
+   * @returns
+   * @example
+   * unblockPresence('from', true);
+   */
   async unblockPresence(from: string, flag?: boolean): Promise<void> {
     if (this.xmpp) {
       const presence = xml(
@@ -344,6 +533,18 @@ class XMPPService {
     }
   }
 
+  /**
+   * Sends a file to a user
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the file is sent
+   * Logs the error if the user is not connected
+   * @param to 
+   * @param file 
+   * @returns 
+   * @example
+   * sendFile('to', { type: 'type', name: 'name', base64: 'base64' });
+   */
   async sendFile(to: string, file:File){
     if (this.xmpp){
       try {
@@ -372,6 +573,17 @@ class XMPPService {
     }
   }
 
+  /**
+   * Obtains the name of a group chat
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the group name if obtained
+   * Logs the error if the user is not connected
+   * @param groupJid 
+   * @returns group name or null
+   * @example
+   * getGroupName('groupJid');
+   */
   async getGroupName(groupJid: string): Promise<string | null> {
     if (this.xmpp) {
       const discoInfoRequest = xml(
@@ -402,6 +614,18 @@ class XMPPService {
     }
   }
 
+  /**
+   * Accepts a group chat invitation
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the user joins the group chat
+   * Logs the error if the user is not connected
+   * @param roomJid The JID of the group chat
+   * @param nickname The nickname of the user in the group chat
+   * @returns
+   * @example
+   * acceptGroupChatInvitation('roomJid', 'nickname');
+   */
   async acceptGroupChatInvitation(roomJid: string, nickname: string): Promise<void> {
     if (this.xmpp) {
       try {
@@ -422,6 +646,19 @@ class XMPPService {
     }
   }
 
+  /**
+   * Creates a group chat
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the group chat is created
+   * Logs the error if the user is not connected
+   * @param groupName 
+   * @param nickname 
+   * @param domain 
+   * @returns 
+   * @example
+   * createGroup('groupName', 'nickname', 'domain');
+   */
   async createGroup(groupName: string, nickname: string, domain: string): Promise<string> {
     if (this.xmpp) {
       const groupJid = `${groupName}@conference.${domain}`;
@@ -474,6 +711,19 @@ class XMPPService {
     }
   }
 
+  /**
+   * Sends an invitation to a user to join a group chat
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the success message if the invitation is sent
+   * Logs the error if the user is not connected
+   * @param groupJid 
+   * @param inviteeJid 
+   * @param reason 
+   * @returns
+   * @example
+   * sendGroupInvitation('groupJid', 'inviteeJid', 'reason');
+   */
   async sendGroupInvitation(groupJid: string, inviteeJid: string, reason?: string): Promise<void> {
     if (this.xmpp) {
       try {
@@ -497,6 +747,17 @@ class XMPPService {
     }
   }
 
+  /**
+   * Obtains the participants of a group chat
+   * Requires the user to be connected
+   * Logs the error if any
+   * Logs the participants if obtained
+   * Logs the error if the user is not connected
+   * @param groupJid The JID of the group chat
+   * @returns The participants of the group chat
+   * @example
+   * const participants = await getGroupParticipants('groupJid');
+   */
   async getGroupParticipants(groupJid: string): Promise<{ jid: string; name: string }[]> {
     if (this.xmpp) {
       try {
@@ -529,7 +790,15 @@ class XMPPService {
     }
   }
 
-
+  /*
+  * Deletes the account from the XM
+  * Requires the user to be connected
+  * Disconnects the user after the account is deleted
+  * Logs the error if any
+  * Logs the success message if the account is deleted
+  * Logs the success message if the user is disconnected
+  * Logs the error if the user is not connected
+  */
   async deleteAccount(): Promise<void> {
     if (this.xmpp) {
       try {
