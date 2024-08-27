@@ -2,6 +2,7 @@
 
 This app is made for educative purposes only.
 Using the XMPP protocol, this app is able to send and recive messages from other users and group chats.
+You can access the presentation [here](https://www.canva.com/design/DAGPEpn9AJU/3TYa4OQs_Uhj_QtRFeju5A/edit?utm_content=DAGPEpn9AJU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 ## Features
 ### Account Management
